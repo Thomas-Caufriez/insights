@@ -1,9 +1,17 @@
+import { useState } from 'react'
 import { getIllustration } from './illustrations'
 
 export default function RecipeGrid({ entries, filterId, onSelect }) {
-  const label = filterId
-    ? null // sidebar already shows context
-    : null
+  const [search, setSearch] = useState('')
+
+  const q = search.trim().toLowerCase()
+  const visible = q
+    ? entries.filter((e) =>
+        [e.title, e.titleBase, e.titleItalic, e.category]
+          .filter(Boolean)
+          .some((s) => s.toLowerCase().includes(q))
+      )
+    : entries
 
   return (
     <div style={{ padding: '2.5rem 3rem', overflowY: 'auto', height: '100%' }}>
@@ -15,11 +23,53 @@ export default function RecipeGrid({ entries, filterId, onSelect }) {
           color: '#4a3728',
           fontWeight: 400,
         }}>
-          {entries.length === 0 ? 'Aucun résultat' : 'Toutes les recettes'}
+          {visible.length === 0 ? 'Aucun résultat' : 'Toutes les recettes'}
         </h2>
         <p style={{ fontFamily: '"DM Sans", sans-serif', fontSize: '0.75rem', color: 'rgba(74,55,40,0.4)', marginTop: '0.25rem' }}>
-          {entries.length} fiche{entries.length > 1 ? 's' : ''}
+          {visible.length} fiche{visible.length > 1 ? 's' : ''}
         </p>
+      </div>
+
+      {/* Search bar */}
+      <div style={{ marginBottom: '1.75rem', position: 'relative', maxWidth: '320px' }}>
+        <span style={{
+          position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)',
+          fontSize: '0.8rem', color: 'rgba(74,55,40,0.35)', pointerEvents: 'none',
+        }}>
+          ⌕
+        </span>
+        <input
+          type="text"
+          placeholder="Rechercher..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          style={{
+            width: '100%',
+            fontFamily: '"DM Sans", sans-serif',
+            fontSize: '0.8rem',
+            color: '#4a3728',
+            background: 'rgba(139,94,60,0.06)',
+            border: '1px solid rgba(139,94,60,0.15)',
+            borderRadius: '999px',
+            padding: '0.45rem 0.75rem 0.45rem 2rem',
+            outline: 'none',
+            transition: 'border-color 0.15s',
+          }}
+          onFocus={(e) => (e.target.style.borderColor = 'rgba(139,94,60,0.4)')}
+          onBlur={(e) => (e.target.style.borderColor = 'rgba(139,94,60,0.15)')}
+        />
+        {search && (
+          <button
+            onClick={() => setSearch('')}
+            style={{
+              position: 'absolute', right: '0.6rem', top: '50%', transform: 'translateY(-50%)',
+              background: 'none', border: 'none', cursor: 'pointer',
+              fontSize: '0.7rem', color: 'rgba(74,55,40,0.35)', padding: '0.1rem 0.2rem',
+            }}
+          >
+            ✕
+          </button>
+        )}
       </div>
 
       {/* Grid */}
@@ -28,7 +78,7 @@ export default function RecipeGrid({ entries, filterId, onSelect }) {
         gridTemplateColumns: 'repeat(auto-fill, minmax(210px, 1fr))',
         gap: '1.25rem',
       }}>
-        {entries.map((entry) => (
+        {visible.map((entry) => (
           <RecipeCard key={entry.id} entry={entry} onClick={() => onSelect(entry.id)} />
         ))}
       </div>

@@ -34,7 +34,7 @@ export default function App() {
         {activeEntry ? (
           <DetailView entry={activeEntry} onBack={handleBack} />
         ) : (
-          <RecipeGrid entries={visibleEntries} filterId={filterId} onSelect={handleSelectEntry} />
+          <RecipeGrid key={filterId} entries={visibleEntries} filterId={filterId} onSelect={handleSelectEntry} />
         )}
       </main>
     </div>
