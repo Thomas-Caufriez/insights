@@ -5,6 +5,7 @@ import ChickenBreakdownIllustration from './ChickenBreakdownIllustration'
 import RiceBowlIllustration from './RiceBowlIllustration'
 import FingerMeasureIllustration from './FingerMeasureIllustration'
 import LimoncelloIllustration from './LimoncelloIllustration'
+import MaiTaiIllustration from './MaiTaiIllustration'
 
 export const illustrations = {
   'chicken-mustard': ChickenMustardIllustration,
@@ -14,6 +15,7 @@ export const illustrations = {
   'rice-bowl': RiceBowlIllustration,
   'finger-measure': FingerMeasureIllustration,
   'limoncello': LimoncelloIllustration,
+  'mai-tai': MaiTaiIllustration,
 }
 
 export function getIllustration(key) {

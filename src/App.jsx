@@ -66,7 +66,7 @@ function DetailView({ entry, onBack }) {
       </div>
 
       {/* Scrollable content */}
-      <div style={{ flex: 1, overflowY: 'auto' }}>
+      <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column' }}>
 
         {/* Header row — content + empty panel placeholder */}
         <div style={{ display: 'flex' }}>
@@ -82,7 +82,7 @@ function DetailView({ entry, onBack }) {
         <div style={{ height: '1px', background: 'rgba(139,94,60,0.15)' }} />
 
         {/* Body row — content + decorative panel */}
-        <div style={{ display: 'flex' }}>
+        <div style={{ display: 'flex', flex: 1 }}>
           <div style={{ flex: 1, minWidth: 0, padding: '2rem 3.5rem 3rem' }}>
             <div style={{ maxWidth: '800px' }}>
               <Body key={entry.id} entry={entry} />
@@ -139,7 +139,7 @@ function DecorativePanel({ Illustration }) {
           top: '50%', left: '50%',
           transform: 'translate(-50%, -50%)',
           width: '155px', height: '155px',
-          opacity: 0.08,
+          opacity: 0.22,
           zIndex: 0,
         }}>
           <Illustration />
