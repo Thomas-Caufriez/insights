@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { getIllustration } from './illustrations'
 
-export default function RecipeGrid({ entries, filterId, onSelect }) {
+export default function RecipeGrid({ entries, filterId, onSelect, isMobile, onMenuOpen }) {
   const [search, setSearch] = useState('')
 
   const q = search.trim().toLowerCase()
@@ -14,20 +14,34 @@ export default function RecipeGrid({ entries, filterId, onSelect }) {
     : entries
 
   return (
-    <div style={{ padding: '2.5rem 3rem', overflowY: 'auto', height: '100%' }}>
+    <div style={{ padding: isMobile ? '1.5rem 1rem' : '2.5rem 3rem', overflowY: 'auto', height: '100%' }}>
       {/* Header */}
-      <div style={{ marginBottom: '2rem' }}>
-        <h2 style={{
-          fontFamily: '"Playfair Display", serif',
-          fontSize: '1.5rem',
-          color: '#4a3728',
-          fontWeight: 400,
-        }}>
-          {visible.length === 0 ? 'Aucun résultat' : 'Toutes les recettes'}
-        </h2>
-        <p style={{ fontFamily: '"DM Sans", sans-serif', fontSize: '0.75rem', color: 'rgba(74,55,40,0.4)', marginTop: '0.25rem' }}>
-          {visible.length} fiche{visible.length > 1 ? 's' : ''}
-        </p>
+      <div style={{ marginBottom: '2rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+        {isMobile && (
+          <button
+            onClick={onMenuOpen}
+            style={{
+              fontFamily: '"DM Sans", sans-serif', fontSize: '1.2rem',
+              color: 'rgba(74,55,40,0.45)', background: 'none', border: 'none',
+              cursor: 'pointer', padding: 0, lineHeight: 1, flexShrink: 0,
+            }}
+          >
+            ≡
+          </button>
+        )}
+        <div>
+          <h2 style={{
+            fontFamily: '"Playfair Display", serif',
+            fontSize: '1.5rem',
+            color: '#4a3728',
+            fontWeight: 400,
+          }}>
+            {visible.length === 0 ? 'Aucun résultat' : 'Toutes les recettes'}
+          </h2>
+          <p style={{ fontFamily: '"DM Sans", sans-serif', fontSize: '0.75rem', color: 'rgba(74,55,40,0.4)', marginTop: '0.25rem' }}>
+            {visible.length} fiche{visible.length > 1 ? 's' : ''}
+          </p>
+        </div>
       </div>
 
       {/* Search bar */}

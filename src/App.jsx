@@ -6,18 +6,22 @@ import { RecipePageHeader, RecipePageBody } from './components/RecipePage'
 import { TipPageHeader, TipPageBody } from './components/TipPage'
 import { getIllustration } from './components/illustrations'
 import { entries, getFilteredEntries } from './data/entries'
+import { useIsMobile } from './hooks/useIsMobile'
 
 export default function App() {
   const [section, setSection] = useState(null)
   const [filterId, setFilterId] = useState(null)
   const [activeId, setActiveId] = useState(null)
+  const [sidebarOpen, setSidebarOpen] = useState(false)
+  const isMobile = useIsMobile()
 
   const activeEntry = activeId ? entries.find((e) => e.id === activeId) : null
   const visibleEntries = getFilteredEntries(filterId)
 
   function handleSelectEntry(id) { setActiveId(id) }
   function handleBack() { setActiveId(null) }
-  function handleFilter(id) { setFilterId(id); setActiveId(null) }
+  function handleFilter(id) { setFilterId(id); setActiveId(null); setSidebarOpen(false) }
+  function handleHome() { setSection(null); setFilterId(null); setActiveId(null); setSidebarOpen(false) }
 
   if (section === null) {
     return (
@@ -29,28 +33,82 @@ export default function App() {
 
   return (
     <div style={{ position: 'fixed', inset: 0, display: 'flex', background: '#f7f0e3', overflow: 'hidden' }}>
-      <Sidebar filterId={filterId} onFilter={handleFilter} onHome={() => { setSection(null); setFilterId(null); setActiveId(null) }} />
+
+      {/* Mobile backdrop */}
+      {isMobile && sidebarOpen && (
+        <div
+          onClick={() => setSidebarOpen(false)}
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 10 }}
+        />
+      )}
+
+      {/* Sidebar — fixed overlay on mobile, static on desktop */}
+      <div style={isMobile ? {
+        position: 'fixed', top: 0, left: sidebarOpen ? 0 : '-240px',
+        bottom: 0, zIndex: 20, transition: 'left 0.25s ease',
+      } : {}}>
+        <Sidebar
+          filterId={filterId}
+          onFilter={handleFilter}
+          onHome={handleHome}
+          isMobile={isMobile}
+          onClose={() => setSidebarOpen(false)}
+        />
+      </div>
+
       <main style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
         {activeEntry ? (
-          <DetailView entry={activeEntry} onBack={handleBack} />
+          <DetailView
+            entry={activeEntry}
+            onBack={handleBack}
+            isMobile={isMobile}
+            onMenuOpen={() => setSidebarOpen(true)}
+          />
         ) : (
-          <RecipeGrid key={filterId} entries={visibleEntries} filterId={filterId} onSelect={handleSelectEntry} />
+          <RecipeGrid
+            key={filterId}
+            entries={visibleEntries}
+            filterId={filterId}
+            onSelect={handleSelectEntry}
+            isMobile={isMobile}
+            onMenuOpen={() => setSidebarOpen(true)}
+          />
         )}
       </main>
     </div>
   )
 }
 
-function DetailView({ entry, onBack }) {
+function DetailView({ entry, onBack, isMobile, onMenuOpen }) {
   const Illustration = getIllustration(entry.illustration)
   const Header = entry.type === 'recipe' ? RecipePageHeader : TipPageHeader
   const Body   = entry.type === 'recipe' ? RecipePageBody  : TipPageBody
+  const hPad = isMobile ? '1rem' : '3.5rem'
 
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
 
       {/* Back bar */}
-      <div style={{ padding: '1rem 3.5rem', borderBottom: '1px solid rgba(139,94,60,0.1)', flexShrink: 0 }}>
+      <div style={{
+        padding: `0.9rem ${hPad}`,
+        borderBottom: '1px solid rgba(139,94,60,0.1)',
+        flexShrink: 0,
+        display: 'flex',
+        alignItems: 'center',
+        gap: '0.75rem',
+      }}>
+        {isMobile && (
+          <button
+            onClick={onMenuOpen}
+            style={{
+              fontFamily: '"DM Sans", sans-serif', fontSize: '1.2rem',
+              color: 'rgba(74,55,40,0.45)', background: 'none', border: 'none',
+              cursor: 'pointer', padding: 0, lineHeight: 1, flexShrink: 0,
+            }}
+          >
+            ≡
+          </button>
+        )}
         <button
           onClick={onBack}
           style={{
@@ -68,27 +126,27 @@ function DetailView({ entry, onBack }) {
       {/* Scrollable content */}
       <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column' }}>
 
-        {/* Header row — content + empty panel placeholder */}
+        {/* Header row */}
         <div style={{ display: 'flex' }}>
-          <div style={{ flex: 1, minWidth: 0, padding: '3rem 3.5rem 1.5rem' }}>
+          <div style={{ flex: 1, minWidth: 0, padding: isMobile ? '1.75rem 1rem 1.25rem' : '3rem 3.5rem 1.5rem' }}>
             <div style={{ maxWidth: '800px' }}>
               <Header key={entry.id} entry={entry} />
             </div>
           </div>
-          <div style={{ width: '260px', flexShrink: 0 }} />
+          {!isMobile && <div style={{ width: '260px', flexShrink: 0 }} />}
         </div>
 
         {/* Full-width divider */}
         <div style={{ height: '1px', background: 'rgba(139,94,60,0.15)' }} />
 
-        {/* Body row — content + decorative panel */}
+        {/* Body row */}
         <div style={{ display: 'flex', flex: 1 }}>
-          <div style={{ flex: 1, minWidth: 0, padding: '2rem 3.5rem 3rem' }}>
+          <div style={{ flex: 1, minWidth: 0, padding: isMobile ? '1.25rem 1rem 2rem' : '2rem 3.5rem 3rem' }}>
             <div style={{ maxWidth: '800px' }}>
               <Body key={entry.id} entry={entry} />
             </div>
           </div>
-          <DecorativePanel Illustration={Illustration} />
+          {!isMobile && <DecorativePanel Illustration={Illustration} />}
         </div>
 
       </div>
@@ -109,20 +167,17 @@ function DecorativePanel({ Illustration }) {
       borderLeft: '1px solid rgba(139,94,60,0.1)',
     }}>
 
-      {/* Wave + diamond SVG background */}
       <svg
         style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }}
         xmlns="http://www.w3.org/2000/svg"
       >
         <defs>
-          {/* Repeating wave lines */}
           <pattern id="wavePattern" x="0" y="0" width="260" height="22" patternUnits="userSpaceOnUse">
             <path
               d="M-10,11 C32,2 88,20 130,11 S193,2 270,11"
               stroke="#8b5e3c" strokeWidth="1" fill="none" opacity="0.11"
             />
           </pattern>
-          {/* Scattered diamonds */}
           <pattern id="diamondPattern" x="0" y="0" width="130" height="110" patternUnits="userSpaceOnUse">
             <rect x="16" y="22" width="6" height="6" transform="rotate(45,19,25)" fill="#8b5e3c" opacity="0.14"/>
             <rect x="85" y="72" width="5" height="5" transform="rotate(45,87.5,74.5)" fill="#c4964a" opacity="0.18"/>
@@ -132,7 +187,6 @@ function DecorativePanel({ Illustration }) {
         <rect width="100%" height="100%" fill="url(#diamondPattern)" />
       </svg>
 
-      {/* Centered illustration — behind waves */}
       {Illustration && (
         <div style={{
           position: 'absolute',

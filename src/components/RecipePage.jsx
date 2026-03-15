@@ -1,5 +1,6 @@
 import { getIllustration } from './illustrations'
 import LeftColumn from './LeftColumn'
+import { useIsMobile } from '../hooks/useIsMobile'
 
 export function RecipePageHeader({ entry }) {
   const Illustration = getIllustration(entry.illustration)
@@ -28,10 +29,12 @@ export function RecipePageHeader({ entry }) {
 }
 
 export function RecipePageBody({ entry }) {
+  const isMobile = useIsMobile()
   return (
-    <div style={{ display: 'flex', gap: '2.5rem', fontFamily: 'Lora, Georgia, serif' }}>
+    <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: isMobile ? '1.5rem' : '2.5rem', fontFamily: 'Lora, Georgia, serif' }}>
       <LeftColumn ingredients={entry.ingredients} tools={entry.tools} />
-      <div style={{ width: '1px', background: 'rgba(139,94,60,0.15)', flexShrink: 0 }} />
+      {!isMobile && <div style={{ width: '1px', background: 'rgba(139,94,60,0.15)', flexShrink: 0 }} />}
+      {isMobile && <div style={{ height: '1px', background: 'rgba(139,94,60,0.15)' }} />}
       <section style={{ flex: 1, minWidth: 0 }}>
         <p style={{ fontFamily: '"DM Sans", sans-serif', fontSize: '0.65rem', textTransform: 'uppercase', letterSpacing: '0.15em', color: '#8b5e3c', marginBottom: '0.75rem' }}>
           Préparation

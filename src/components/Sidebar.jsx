@@ -1,6 +1,6 @@
 import { entries, categories } from '../data/entries'
 
-export default function Sidebar({ filterId, onFilter, onHome }) {
+export default function Sidebar({ filterId, onFilter, onHome, isMobile, onClose }) {
   const totalCount = entries.length
 
   return (
@@ -21,8 +21,12 @@ export default function Sidebar({ filterId, onFilter, onHome }) {
         style={{
           padding: '1.25rem 1.5rem 1.25rem',
           borderBottom: '1px solid rgba(245,200,114,0.07)',
+          display: 'flex',
+          alignItems: 'flex-start',
+          justifyContent: 'space-between',
         }}
       >
+        <div style={{ flex: 1 }}>
         <button
           onClick={onHome}
           style={{
@@ -46,6 +50,19 @@ export default function Sidebar({ filterId, onFilter, onHome }) {
         <p style={{ fontFamily: '"Playfair Display", serif', fontStyle: 'italic', color: '#f5c872', fontSize: '1.1rem', lineHeight: 1.3 }}>
           Carnet de<br />Recettes
         </p>
+        </div>
+        {isMobile && (
+          <button
+            onClick={onClose}
+            style={{
+              background: 'none', border: 'none', cursor: 'pointer',
+              color: 'rgba(245,200,114,0.35)', fontSize: '1.1rem', lineHeight: 1,
+              padding: '0.1rem', flexShrink: 0, marginLeft: '0.5rem',
+            }}
+          >
+            ✕
+          </button>
+        )}
       </div>
 
       {/* Nav */}

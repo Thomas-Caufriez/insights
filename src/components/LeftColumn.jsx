@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react'
+import { useIsMobile } from '../hooks/useIsMobile'
 
 export default function LeftColumn({ ingredients, tools }) {
+  const isMobile = useIsMobile()
   const hasIngredients = ingredients?.length > 0
   const hasTools = tools?.length > 0
   const hasToggle = hasIngredients && hasTools
@@ -16,7 +18,7 @@ export default function LeftColumn({ ingredients, tools }) {
   const items = view === 'ingredients' ? ingredients : tools
 
   return (
-    <section style={{ width: '240px', flexShrink: 0, display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+    <section style={{ width: isMobile ? '100%' : '240px', flexShrink: 0, display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
 
       {/* Toggle or static label */}
       {hasToggle ? (

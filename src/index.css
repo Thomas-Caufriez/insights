@@ -12,6 +12,13 @@
     padding: 2rem;
   }
 
+  @media (max-width: 767px) {
+    body {
+      padding: 1rem;
+      align-items: flex-start;
+    }
+  }
+
   * {
     box-sizing: border-box;
   }

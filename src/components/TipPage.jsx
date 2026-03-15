@@ -1,6 +1,7 @@
 import { getIllustration } from './illustrations'
 import LeftColumn from './LeftColumn'
 import { Note } from './RecipePage'
+import { useIsMobile } from '../hooks/useIsMobile'
 
 export function TipPageHeader({ entry }) {
   const Illustration = getIllustration(entry.illustration)
@@ -24,10 +25,12 @@ export function TipPageHeader({ entry }) {
 }
 
 export function TipPageBody({ entry }) {
+  const isMobile = useIsMobile()
   return (
-    <div style={{ display: 'flex', gap: '2.5rem', fontFamily: 'Lora, Georgia, serif' }}>
+    <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: isMobile ? '1.5rem' : '2.5rem', fontFamily: 'Lora, Georgia, serif' }}>
       <LeftColumn ingredients={entry.ingredients} tools={entry.tools} />
-      <div style={{ width: '1px', background: 'rgba(139,94,60,0.15)', flexShrink: 0 }} />
+      {!isMobile && <div style={{ width: '1px', background: 'rgba(139,94,60,0.15)', flexShrink: 0 }} />}
+      {isMobile && <div style={{ height: '1px', background: 'rgba(139,94,60,0.15)' }} />}
       <section style={{ flex: 1, minWidth: 0 }}>
         {entry.sections?.filter(s => s.body).map((section, i) => (
           <div key={i} style={{ padding: '0.7rem 1rem', borderRadius: '8px', background: 'rgba(139,94,60,0.05)', border: '1px solid rgba(139,94,60,0.1)', marginBottom: '1.25rem' }}>
