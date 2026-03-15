@@ -4,6 +4,7 @@ import BrothIllustration from './BrothIllustration'
 import ChickenBreakdownIllustration from './ChickenBreakdownIllustration'
 import RiceBowlIllustration from './RiceBowlIllustration'
 import FingerMeasureIllustration from './FingerMeasureIllustration'
+import LimoncelloIllustration from './LimoncelloIllustration'
 
 export const illustrations = {
   'chicken-mustard': ChickenMustardIllustration,
@@ -12,6 +13,7 @@ export const illustrations = {
   'chicken-breakdown': ChickenBreakdownIllustration,
   'rice-bowl': RiceBowlIllustration,
   'finger-measure': FingerMeasureIllustration,
+  'limoncello': LimoncelloIllustration,
 }
 
 export function getIllustration(key) {

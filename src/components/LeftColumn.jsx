@@ -16,7 +16,7 @@ export default function LeftColumn({ ingredients, tools }) {
   const items = view === 'ingredients' ? ingredients : tools
 
   return (
-    <section style={{ width: '200px', flexShrink: 0, display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+    <section style={{ width: '240px', flexShrink: 0, display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
 
       {/* Toggle or static label */}
       {hasToggle ? (
@@ -46,7 +46,7 @@ export default function LeftColumn({ ingredients, tools }) {
       )}
 
       {/* List */}
-      <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+      <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
         {items.map((item, i) => {
           const isRow = item.base != null
           const label = typeof item === 'string' ? item : item.label
@@ -62,7 +62,7 @@ export default function LeftColumn({ ingredients, tools }) {
                 background: 'rgba(139,94,60,0.08)', border: '1.5px solid rgba(139,94,60,0.22)',
                 display: 'inline-block',
               }} />
-              <span style={{ color: '#4a3728', fontSize: '0.82rem', lineHeight: 1.5 }}>
+              <span style={{ color: '#4a3728', fontSize: '0.88rem', lineHeight: 1.5 }}>
                 {qty && (
                   <strong style={{ fontFamily: '"DM Sans", sans-serif', fontWeight: 500 }}>
                     {qty}{' '}
