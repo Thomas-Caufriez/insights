@@ -12,7 +12,7 @@ export function TipPageHeader({ entry }) {
           {entry.category}
         </p>
         <h2 style={{ fontFamily: '"Playfair Display", serif', color: '#4a3728', fontSize: '1.75rem', lineHeight: 1.25, marginBottom: '0.25rem' }}>
-          {entry.titleBase} <em style={{ color: '#8b5e3c' }}>{entry.titleItalic}</em>
+          {entry.titleBase}{entry.titleItalic && <> <em style={{ color: '#8b5e3c' }}>{entry.titleItalic}</em></>}
         </h2>
       </div>
       {Illustration && (
@@ -28,7 +28,7 @@ export function TipPageBody({ entry }) {
   const isMobile = useIsMobile()
   return (
     <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: isMobile ? '1.5rem' : '2.5rem', fontFamily: 'Lora, Georgia, serif' }}>
-      <LeftColumn ingredients={entry.ingredients} tools={entry.tools} />
+      <LeftColumn ingredients={entry.ingredients} note={entry.notes} />
       {!isMobile && <div style={{ width: '1px', background: 'rgba(139,94,60,0.15)', flexShrink: 0 }} />}
       {isMobile && <div style={{ height: '1px', background: 'rgba(139,94,60,0.15)' }} />}
       <section style={{ flex: 1, minWidth: 0 }}>
@@ -62,7 +62,6 @@ export function TipPageBody({ entry }) {
             />
           </div>
         )}
-        {entry.notes && <Note>{entry.notes}</Note>}
       </section>
     </div>
   )

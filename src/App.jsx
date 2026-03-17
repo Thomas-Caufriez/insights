@@ -59,6 +59,7 @@ export default function App() {
       <main style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
         {activeEntry ? (
           <DetailView
+            key={activeEntry.id}
             entry={activeEntry}
             onBack={handleBack}
             isMobile={isMobile}
@@ -80,6 +81,14 @@ export default function App() {
 }
 
 function DetailView({ entry, onBack, isMobile, onMenuOpen }) {
+  const [activeVariant, setActiveVariant] = useState(0)
+
+  const variants = entry.variants
+  const hasVariants = variants?.length > 0
+  const effectiveEntry = hasVariants && activeVariant > 0
+    ? { ...entry, ...variants[activeVariant - 1] }
+    : entry
+
   const Illustration = getIllustration(entry.illustration)
   const Header = entry.type === 'recipe' ? RecipePageHeader : TipPageHeader
   const Body   = entry.type === 'recipe' ? RecipePageBody  : TipPageBody
@@ -101,10 +110,14 @@ function DetailView({ entry, onBack, isMobile, onMenuOpen }) {
           <button
             onClick={onMenuOpen}
             style={{
-              fontFamily: '"DM Sans", sans-serif', fontSize: '1.2rem',
-              color: 'rgba(74,55,40,0.45)', background: 'none', border: 'none',
-              cursor: 'pointer', padding: 0, lineHeight: 1, flexShrink: 0,
+              fontFamily: '"DM Sans", sans-serif', fontSize: '1.1rem',
+              color: '#8b5e3c', background: 'rgba(139,94,60,0.08)',
+              border: '1px solid rgba(139,94,60,0.22)', borderRadius: '8px',
+              cursor: 'pointer', padding: '0.28rem 0.55rem', lineHeight: 1, flexShrink: 0,
+              transition: 'background 0.12s, border-color 0.12s',
             }}
+            onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(139,94,60,0.15)'; e.currentTarget.style.borderColor = 'rgba(139,94,60,0.4)' }}
+            onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(139,94,60,0.08)'; e.currentTarget.style.borderColor = 'rgba(139,94,60,0.22)' }}
           >
             ≡
           </button>
@@ -112,12 +125,14 @@ function DetailView({ entry, onBack, isMobile, onMenuOpen }) {
         <button
           onClick={onBack}
           style={{
-            fontFamily: '"DM Sans", sans-serif', fontSize: '0.75rem',
-            color: 'rgba(74,55,40,0.5)', background: 'none', border: 'none',
-            cursor: 'pointer', padding: 0, letterSpacing: '0.02em', transition: 'color 0.12s',
+            fontFamily: '"DM Sans", sans-serif', fontSize: '0.75rem', fontWeight: 500,
+            color: '#8b5e3c', background: 'rgba(139,94,60,0.08)',
+            border: '1px solid rgba(139,94,60,0.22)', borderRadius: '999px',
+            cursor: 'pointer', padding: '0.3rem 0.85rem', letterSpacing: '0.02em',
+            transition: 'background 0.12s, border-color 0.12s',
           }}
-          onMouseEnter={(e) => (e.currentTarget.style.color = '#8b5e3c')}
-          onMouseLeave={(e) => (e.currentTarget.style.color = 'rgba(74,55,40,0.5)')}
+          onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(139,94,60,0.15)'; e.currentTarget.style.borderColor = 'rgba(139,94,60,0.4)' }}
+          onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(139,94,60,0.08)'; e.currentTarget.style.borderColor = 'rgba(139,94,60,0.22)' }}
         >
           ← Retour
         </button>
@@ -130,7 +145,17 @@ function DetailView({ entry, onBack, isMobile, onMenuOpen }) {
         <div style={{ display: 'flex' }}>
           <div style={{ flex: 1, minWidth: 0, padding: isMobile ? '1.75rem 1rem 1.25rem' : '3rem 3.5rem 1.5rem' }}>
             <div style={{ maxWidth: '800px' }}>
-              <Header key={entry.id} entry={entry} />
+              <Header key={entry.id} entry={effectiveEntry} />
+              {hasVariants && (
+                <div style={{ marginTop: '1.25rem', display: 'inline-flex', borderRadius: '999px', border: '1px solid rgba(139,94,60,0.2)', overflow: 'hidden' }}>
+                  <VariantBtn active={activeVariant === 0} onClick={() => setActiveVariant(0)}>{entry.baseLabel || 'Original'}</VariantBtn>
+                  {variants.map((v, i) => (
+                    <VariantBtn key={i} active={activeVariant === i + 1} onClick={() => setActiveVariant(i + 1)}>
+                      {v.label}
+                    </VariantBtn>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
           {!isMobile && <div style={{ width: '260px', flexShrink: 0 }} />}
@@ -143,7 +168,7 @@ function DetailView({ entry, onBack, isMobile, onMenuOpen }) {
         <div style={{ display: 'flex', flex: 1 }}>
           <div style={{ flex: 1, minWidth: 0, padding: isMobile ? '1.25rem 1rem 2rem' : '2rem 3.5rem 3rem' }}>
             <div style={{ maxWidth: '800px' }}>
-              <Body key={entry.id} entry={entry} />
+              <Body key={`${entry.id}-${activeVariant}`} entry={effectiveEntry} />
             </div>
           </div>
           {!isMobile && <DecorativePanel Illustration={Illustration} />}
@@ -151,6 +176,24 @@ function DetailView({ entry, onBack, isMobile, onMenuOpen }) {
 
       </div>
     </div>
+  )
+}
+
+function VariantBtn({ active, onClick, children }) {
+  return (
+    <button
+      onClick={onClick}
+      style={{
+        padding: '0.25rem 0.7rem', border: 'none',
+        borderRight: '1px solid rgba(139,94,60,0.2)',
+        background: active ? '#8b5e3c' : 'transparent',
+        color: active ? 'white' : '#8b5e3c',
+        fontFamily: '"DM Sans", sans-serif', fontSize: '0.65rem', fontWeight: 500,
+        cursor: 'pointer', transition: 'all 0.15s', whiteSpace: 'nowrap',
+      }}
+    >
+      {children}
+    </button>
   )
 }
 

@@ -21,10 +21,14 @@ export default function RecipeGrid({ entries, filterId, onSelect, isMobile, onMe
           <button
             onClick={onMenuOpen}
             style={{
-              fontFamily: '"DM Sans", sans-serif', fontSize: '1.2rem',
-              color: 'rgba(74,55,40,0.45)', background: 'none', border: 'none',
-              cursor: 'pointer', padding: 0, lineHeight: 1, flexShrink: 0,
+              fontFamily: '"DM Sans", sans-serif', fontSize: '1.1rem',
+              color: '#8b5e3c', background: 'rgba(139,94,60,0.08)',
+              border: '1px solid rgba(139,94,60,0.22)', borderRadius: '8px',
+              cursor: 'pointer', padding: '0.28rem 0.55rem', lineHeight: 1, flexShrink: 0,
+              transition: 'background 0.12s, border-color 0.12s',
             }}
+            onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(139,94,60,0.15)'; e.currentTarget.style.borderColor = 'rgba(139,94,60,0.4)' }}
+            onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(139,94,60,0.08)'; e.currentTarget.style.borderColor = 'rgba(139,94,60,0.22)' }}
           >
             ≡
           </button>
@@ -170,15 +174,17 @@ function RecipeCard({ entry, onClick }) {
         }}>
           {entry.titleBase}
         </p>
-        <p style={{
-          fontFamily: '"Playfair Display", serif',
-          fontStyle: 'italic',
-          fontSize: '0.88rem',
-          color: '#8b5e3c',
-          lineHeight: 1.3,
-        }}>
-          {entry.titleItalic}
-        </p>
+        {entry.titleItalic && (
+          <p style={{
+            fontFamily: '"Playfair Display", serif',
+            fontStyle: 'italic',
+            fontSize: '0.88rem',
+            color: '#8b5e3c',
+            lineHeight: 1.3,
+          }}>
+            {entry.titleItalic}
+          </p>
+        )}
 
         {/* Spacer — pushes meta to bottom */}
         <div style={{ flex: 1 }} />
