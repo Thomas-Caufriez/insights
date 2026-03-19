@@ -113,6 +113,22 @@ export const entries = [
     notes: 'L\'alcool est à consommer avec modération (non, tu n\'as pas d\'amis qui s\'appelle "modération").',
     variants: [
       {
+        label: 'Alexandre',
+        ingredients: [
+          { label: 'Rhum ambré', base: 3, unit: 'cl' },
+          { label: 'Rhum blanc', base: 3, unit: 'cl' },
+          { label: 'Grand Marnier', base: 2, unit: 'cl' },
+          { label: 'Jus de citron', base: 3, unit: 'cl' },
+          { label: 'Sirop d\'orgeat', base: 2.5, unit: 'cl' },
+        ],
+        steps: [
+          { text: 'Met tous les ingrédients dans un shaker.' },
+          { text: 'Agite à sec vigoureusement pendant 7 secondes (je sais à quoi tu penses mais non, ça veut dire sans glaçons).' },
+          { text: 'Rajoute des glaçons et re-agite plus doucement pendant 3 secondes.' },
+          { text: 'Verse dans un verre à whisky et déguste.' },
+        ],
+      },
+      {
         label: 'Thomas',
         ingredients: [
           { label: 'Rhum', base: 5, unit: 'cl' },
