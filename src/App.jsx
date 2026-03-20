@@ -82,6 +82,7 @@ export default function App() {
 
 function DetailView({ entry, onBack, isMobile, onMenuOpen }) {
   const [activeVariant, setActiveVariant] = useState(0)
+  const hidePanel = useIsMobile(1100)
 
   const variants = entry.variants
   const hasVariants = variants?.length > 0
@@ -158,7 +159,7 @@ function DetailView({ entry, onBack, isMobile, onMenuOpen }) {
               )}
             </div>
           </div>
-          {!isMobile && <div style={{ width: '260px', flexShrink: 0 }} />}
+          {!hidePanel && <div style={{ width: '260px', flexShrink: 0 }} />}
         </div>
 
         {/* Full-width divider */}
@@ -171,7 +172,7 @@ function DetailView({ entry, onBack, isMobile, onMenuOpen }) {
               <Body key={`${entry.id}-${activeVariant}`} entry={effectiveEntry} />
             </div>
           </div>
-          {!isMobile && <DecorativePanel Illustration={Illustration} />}
+          {!hidePanel && <DecorativePanel Illustration={Illustration} />}
         </div>
 
       </div>
