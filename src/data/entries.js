@@ -136,8 +136,9 @@ export const entries = [
           { label: 'Sucre de canne', base: 1.5, unit: 'cl' },
           { label: 'Sirop d\'orgeat', base: 1.5, unit: 'cl' },
           { label: 'Jus de citron vert', base: 1.5, unit: 'cl' },
-          { label: 'Jus d\'orange (au gout)' },
-          { label: 'Jus d\'ananas (au gout)' },
+          { label: 'Passoa', base: 1, unit: 'cl' },
+          { label: 'Jus d\'orange', base: 5, unit: 'cl' },
+          { label: 'Jus d\'ananas', base: 2.5, unit: 'cl' },
         ],
         steps: [
           { text: 'Mets les glaçons dans un verre à whisky.' },
