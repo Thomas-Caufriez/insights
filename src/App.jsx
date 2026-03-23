@@ -6,6 +6,10 @@ import { RecipePageHeader, RecipePageBody } from './components/RecipePage'
 import { TipPageHeader, TipPageBody } from './components/TipPage'
 import { getIllustration } from './components/illustrations'
 import { entries, getFilteredEntries } from './data/entries'
+import MuscuSidebar from './components/MuscuSidebar'
+import MuscuGrid from './components/MuscuGrid'
+import { MuscuExerciseHeader, MuscuExerciseBody } from './components/MuscuExercisePage'
+import { muscuEntries, getMuscuFilteredEntries } from './data/muscuData'
 import { useIsMobile } from './hooks/useIsMobile'
 
 export default function App() {
@@ -15,8 +19,16 @@ export default function App() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const isMobile = useIsMobile()
 
-  const activeEntry = activeId ? entries.find((e) => e.id === activeId) : null
-  const visibleEntries = getFilteredEntries(filterId)
+  const isMusculation = section === 'musculation'
+
+  const activeEntry = activeId
+    ? isMusculation
+      ? muscuEntries.find((e) => e.id === activeId)
+      : entries.find((e) => e.id === activeId)
+    : null
+  const visibleEntries = isMusculation
+    ? getMuscuFilteredEntries(filterId)
+    : getFilteredEntries(filterId)
 
   function handleSelectEntry(id) { setActiveId(id) }
   function handleBack() { setActiveId(null) }
@@ -32,7 +44,7 @@ export default function App() {
   }
 
   return (
-    <div style={{ position: 'fixed', inset: 0, display: 'flex', background: '#f7f0e3', overflow: 'hidden' }}>
+    <div style={{ position: 'fixed', inset: 0, display: 'flex', background: isMusculation ? '#1c1e22' : '#f7f0e3', overflow: 'hidden' }}>
 
       {/* Mobile backdrop */}
       {isMobile && sidebarOpen && (
@@ -47,21 +59,48 @@ export default function App() {
         position: 'fixed', top: 0, left: sidebarOpen ? 0 : '-240px',
         bottom: 0, zIndex: 20, transition: 'left 0.25s ease',
       } : {}}>
-        <Sidebar
-          filterId={filterId}
-          onFilter={handleFilter}
-          onHome={handleHome}
-          isMobile={isMobile}
-          onClose={() => setSidebarOpen(false)}
-        />
+        {isMusculation ? (
+          <MuscuSidebar
+            filterId={filterId}
+            onFilter={handleFilter}
+            onHome={handleHome}
+            isMobile={isMobile}
+            onClose={() => setSidebarOpen(false)}
+          />
+        ) : (
+          <Sidebar
+            filterId={filterId}
+            onFilter={handleFilter}
+            onHome={handleHome}
+            isMobile={isMobile}
+            onClose={() => setSidebarOpen(false)}
+          />
+        )}
       </div>
 
       <main style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-        {activeEntry ? (
+        {activeEntry && isMusculation ? (
+          <MuscuDetailView
+            key={activeEntry.id}
+            entry={activeEntry}
+            onBack={handleBack}
+            isMobile={isMobile}
+            onMenuOpen={() => setSidebarOpen(true)}
+          />
+        ) : activeEntry ? (
           <DetailView
             key={activeEntry.id}
             entry={activeEntry}
             onBack={handleBack}
+            isMobile={isMobile}
+            onMenuOpen={() => setSidebarOpen(true)}
+          />
+        ) : isMusculation ? (
+          <MuscuGrid
+            key={filterId}
+            entries={visibleEntries}
+            filterId={filterId}
+            onSelect={handleSelectEntry}
             isMobile={isMobile}
             onMenuOpen={() => setSidebarOpen(true)}
           />
@@ -243,6 +282,79 @@ function DecorativePanel({ Illustration }) {
           <Illustration />
         </div>
       )}
+    </div>
+  )
+}
+
+function MuscuDetailView({ entry, onBack, isMobile, onMenuOpen }) {
+  const hPad = isMobile ? '1rem' : '3.5rem'
+
+  return (
+    <div style={{ height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden', background: '#1c1e22' }}>
+
+      {/* Back bar */}
+      <div style={{
+        padding: `0.9rem ${hPad}`,
+        borderBottom: '1px solid rgba(192,200,212,0.07)',
+        flexShrink: 0,
+        display: 'flex',
+        alignItems: 'center',
+        gap: '0.75rem',
+      }}>
+        {isMobile && (
+          <button
+            onClick={onMenuOpen}
+            style={{
+              fontFamily: '"Barlow", sans-serif', fontSize: '1.1rem',
+              color: '#c0c8d4', background: 'rgba(192,200,212,0.07)',
+              border: '1px solid rgba(192,200,212,0.12)', borderRadius: '3px',
+              cursor: 'pointer', padding: '0.28rem 0.55rem', lineHeight: 1, flexShrink: 0,
+              transition: 'background 0.12s',
+            }}
+            onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(192,200,212,0.12)' }}
+            onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(192,200,212,0.07)' }}
+          >
+            ≡
+          </button>
+        )}
+        <button
+          onClick={onBack}
+          style={{
+            fontFamily: '"Barlow", sans-serif', fontSize: '0.7rem', fontWeight: 500,
+            textTransform: 'uppercase', letterSpacing: '0.12em',
+            color: '#c0c8d4', background: 'rgba(192,200,212,0.07)',
+            border: '1px solid rgba(192,200,212,0.12)', borderRadius: '3px',
+            cursor: 'pointer', padding: '0.3rem 0.85rem',
+            transition: 'background 0.12s',
+          }}
+          onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(192,200,212,0.12)' }}
+          onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(192,200,212,0.07)' }}
+        >
+          ← Retour
+        </button>
+      </div>
+
+      {/* Scrollable content */}
+      <div style={{ flex: 1, overflowY: 'auto' }}>
+
+        {/* Header */}
+        <div style={{ padding: isMobile ? '1.75rem 1rem 1.5rem' : '3rem 3.5rem 2rem' }}>
+          <div style={{ maxWidth: '860px' }}>
+            <MuscuExerciseHeader entry={entry} />
+          </div>
+        </div>
+
+        {/* Divider */}
+        <div style={{ height: '1px', background: 'rgba(192,200,212,0.07)' }} />
+
+        {/* Body */}
+        <div style={{ padding: isMobile ? '1.5rem 1rem 3rem' : '2.5rem 3.5rem 4rem' }}>
+          <div style={{ maxWidth: '860px' }}>
+            <MuscuExerciseBody entry={entry} />
+          </div>
+        </div>
+
+      </div>
     </div>
   )
 }

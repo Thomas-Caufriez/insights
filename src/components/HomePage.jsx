@@ -3,13 +3,20 @@ const categories = [
     id: 'cooking',
     label: 'Cuisine',
     description: 'Recettes, fiches techniques, carnets de saveurs.',
-    // Preview of the cooking world's palette
     accentColor: '#f5c872',
     borderColor: 'rgba(245,200,114,0.2)',
     hoverBorder: 'rgba(245,200,114,0.45)',
     dot: '#f5c872',
   },
-  // Future categories — add entries here
+  {
+    id: 'musculation',
+    label: 'Musculation',
+    description: 'Exercices, techniques, routines d\'entraînement.',
+    accentColor: '#c0c8d4',
+    borderColor: 'rgba(192,200,212,0.2)',
+    hoverBorder: 'rgba(192,200,212,0.45)',
+    dot: '#c0c8d4',
+  },
 ]
 
 export default function HomePage({ onSelect }) {
@@ -32,12 +39,12 @@ export default function HomePage({ onSelect }) {
         </h1>
         <p
           style={{
-            fontFamily: 'Lora, Georgia, serif',
+            fontFamily: '"Cormorant Garamond", Georgia, serif',
             fontStyle: 'italic',
-            fontSize: '2rem',
+            fontSize: '2.2rem',
             color: 'rgba(255,255,255,0.82)',
             lineHeight: 1.3,
-            fontWeight: 400,
+            fontWeight: 300,
           }}
         >
           Où voulez-vous
@@ -126,8 +133,9 @@ function CategoryRow({ cat, onSelect }) {
         <span
           style={{
             display: 'block',
-            fontFamily: 'Lora, Georgia, serif',
-            fontSize: '0.95rem',
+            fontFamily: '"DM Sans", sans-serif',
+            fontWeight: 400,
+            fontSize: '0.92rem',
             color: 'rgba(255,255,255,0.75)',
             lineHeight: 1.4,
           }}
