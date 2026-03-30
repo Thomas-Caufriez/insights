@@ -17,6 +17,15 @@ const categories = [
     hoverBorder: 'rgba(192,200,212,0.45)',
     dot: '#c0c8d4',
   },
+  {
+    id: 'trading',
+    label: 'Trading',
+    description: 'Crypto, actions, forex, matières premières.',
+    accentColor: '#00d4aa',
+    borderColor: 'rgba(0,212,170,0.15)',
+    hoverBorder: 'rgba(0,212,170,0.4)',
+    dot: '#00d4aa',
+  },
 ]
 
 export default function HomePage({ onSelect }) {
@@ -59,19 +68,6 @@ export default function HomePage({ onSelect }) {
           <CategoryRow key={cat.id} cat={cat} onSelect={onSelect} />
         ))}
 
-        {/* Placeholder */}
-        <div
-          style={{
-            padding: '1rem 1.25rem',
-            borderRadius: '10px',
-            border: '1px dashed rgba(255,255,255,0.07)',
-            color: 'rgba(255,255,255,0.15)',
-            fontFamily: '"DM Sans", sans-serif',
-            fontSize: '0.75rem',
-          }}
-        >
-          + à venir
-        </div>
       </div>
 
       {/* Footer */}

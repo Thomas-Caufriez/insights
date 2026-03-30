@@ -10,6 +10,10 @@ import MuscuSidebar from './components/MuscuSidebar'
 import MuscuGrid from './components/MuscuGrid'
 import { MuscuExerciseHeader, MuscuExerciseBody } from './components/MuscuExercisePage'
 import { muscuEntries, getMuscuFilteredEntries } from './data/muscuData'
+import TradingDashboard from './components/TradingDashboard'
+import TradingGrid from './components/TradingGrid'
+import { TradingPageHeader, TradingPageBody } from './components/TradingPage'
+import { tradingEntries, getTradingFilteredEntries } from './data/tradingData'
 import { useIsMobile } from './hooks/useIsMobile'
 
 export default function App() {
@@ -20,15 +24,20 @@ export default function App() {
   const isMobile = useIsMobile()
 
   const isMusculation = section === 'musculation'
+  const isTrading = section === 'trading'
 
   const activeEntry = activeId
-    ? isMusculation
-      ? muscuEntries.find((e) => e.id === activeId)
-      : entries.find((e) => e.id === activeId)
+    ? isTrading
+      ? tradingEntries.find((e) => e.id === activeId)
+      : isMusculation
+        ? muscuEntries.find((e) => e.id === activeId)
+        : entries.find((e) => e.id === activeId)
     : null
-  const visibleEntries = isMusculation
-    ? getMuscuFilteredEntries(filterId)
-    : getFilteredEntries(filterId)
+  const visibleEntries = isTrading
+    ? getTradingFilteredEntries(filterId)
+    : isMusculation
+      ? getMuscuFilteredEntries(filterId)
+      : getFilteredEntries(filterId)
 
   function handleSelectEntry(id) { setActiveId(id) }
   function handleBack() { setActiveId(null) }
@@ -43,8 +52,39 @@ export default function App() {
     )
   }
 
+  // Trading — no sidebar, completely different layout
+  if (isTrading) {
+    return (
+      <div style={{ position: 'fixed', inset: 0, background: '#0d1117', overflow: 'hidden' }}>
+        {!filterId && !activeEntry ? (
+          <TradingDashboard
+            onSelectCategory={handleFilter}
+            onHome={handleHome}
+            isMobile={isMobile}
+          />
+        ) : activeEntry ? (
+          <TradingDetailView
+            key={activeEntry.id}
+            entry={activeEntry}
+            onBack={handleBack}
+            isMobile={isMobile}
+          />
+        ) : (
+          <TradingGrid
+            key={filterId}
+            entries={visibleEntries}
+            filterId={filterId}
+            onSelect={handleSelectEntry}
+            isMobile={isMobile}
+            onBack={() => handleFilter(null)}
+          />
+        )}
+      </div>
+    )
+  }
+
   return (
-    <div style={{ position: 'fixed', inset: 0, display: 'flex', background: isMusculation ? '#1c1e22' : '#f7f0e3', overflow: 'hidden' }}>
+    <div style={{ position: 'fixed', inset: 0, display: 'flex', background: isTrading ? '#0d1117' : isMusculation ? '#1c1e22' : '#f7f0e3', overflow: 'hidden' }}>
 
       {/* Mobile backdrop */}
       {isMobile && sidebarOpen && (
@@ -59,7 +99,15 @@ export default function App() {
         position: 'fixed', top: 0, left: sidebarOpen ? 0 : '-240px',
         bottom: 0, zIndex: 20, transition: 'left 0.25s ease',
       } : {}}>
-        {isMusculation ? (
+        {isTrading ? (
+          <TradingSidebar
+            filterId={filterId}
+            onFilter={handleFilter}
+            onHome={handleHome}
+            isMobile={isMobile}
+            onClose={() => setSidebarOpen(false)}
+          />
+        ) : isMusculation ? (
           <MuscuSidebar
             filterId={filterId}
             onFilter={handleFilter}
@@ -282,6 +330,127 @@ function DecorativePanel({ Illustration }) {
           <Illustration />
         </div>
       )}
+    </div>
+  )
+}
+
+function TradingDetailView({ entry, onBack, isMobile }) {
+  const hPad = isMobile ? '1rem' : '3.5rem'
+  const hidePanel = useIsMobile(1100)
+
+  return (
+    <div style={{ height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden', background: '#0d1117' }}>
+
+      {/* Back bar */}
+      <div style={{
+        padding: `0.9rem ${hPad}`,
+        borderBottom: '1px solid rgba(0,212,170,0.07)',
+        flexShrink: 0,
+        display: 'flex',
+        alignItems: 'center',
+        gap: '0.75rem',
+      }}>
+        <button
+          onClick={onBack}
+          style={{
+            fontFamily: '"Plus Jakarta Sans", sans-serif', fontSize: '0.72rem', fontWeight: 600,
+            letterSpacing: '0.01em',
+            color: '#d1d8e8', background: 'rgba(255,255,255,0.05)',
+            border: '1px solid rgba(255,255,255,0.08)', borderRadius: '8px',
+            cursor: 'pointer', padding: '0.3rem 0.85rem',
+            transition: 'background 0.12s',
+          }}
+          onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(0,212,170,0.1)' }}
+          onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(0,212,170,0.06)' }}
+        >
+          ← Retour
+        </button>
+      </div>
+
+      {/* Scrollable content */}
+      <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column' }}>
+
+        {/* Header row */}
+        <div style={{ display: 'flex' }}>
+          <div style={{ flex: 1, minWidth: 0, padding: isMobile ? '1.75rem 1rem 1.25rem' : '3rem 3.5rem 1.5rem' }}>
+            <div style={{ maxWidth: '800px' }}>
+              <TradingPageHeader entry={entry} />
+            </div>
+          </div>
+          {!hidePanel && <div style={{ width: '260px', flexShrink: 0 }} />}
+        </div>
+
+        {/* Divider */}
+        <div style={{ height: '1px', background: 'rgba(0,212,170,0.07)' }} />
+
+        {/* Body row */}
+        <div style={{ display: 'flex', flex: 1 }}>
+          <div style={{ flex: 1, minWidth: 0, padding: isMobile ? '1.25rem 1rem 2rem' : '2rem 3.5rem 3rem' }}>
+            <div style={{ maxWidth: '800px' }}>
+              <TradingPageBody entry={entry} />
+            </div>
+          </div>
+          {!hidePanel && <TradingDecorativePanel entry={entry} />}
+        </div>
+
+      </div>
+    </div>
+  )
+}
+
+function TradingDecorativePanel({ entry }) {
+  const MARKET_COLORS = {
+    'Crypto': '#f7931a',
+    'Forex': '#00d4aa',
+    'Actions': '#7c85f0',
+    'Matières premières': '#e5c46b',
+    'Analyse technique': 'rgba(205,214,224,0.4)',
+  }
+  const color = MARKET_COLORS[entry?.market] || '#00d4aa'
+
+  return (
+    <div style={{
+      width: '260px',
+      flexShrink: 0,
+      position: 'relative',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      minHeight: '300px',
+      borderLeft: '1px solid rgba(0,212,170,0.07)',
+      background: '#080c12',
+    }}>
+      {/* Grid pattern */}
+      <svg style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }}>
+        <defs>
+          <pattern id="panelGrid" width="24" height="24" patternUnits="userSpaceOnUse">
+            <path d="M 24 0 L 0 0 0 24" fill="none" stroke={color} strokeWidth="0.5" opacity="0.1" />
+          </pattern>
+        </defs>
+        <rect width="100%" height="100%" fill="url(#panelGrid)" />
+        {/* Radial glow */}
+        <radialGradient id="panelGlow" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stopColor={color} stopOpacity="0.08" />
+          <stop offset="100%" stopColor={color} stopOpacity="0" />
+        </radialGradient>
+        <rect width="100%" height="100%" fill="url(#panelGlow)" />
+      </svg>
+
+      {/* Faint ticker */}
+      <p style={{
+        position: 'absolute',
+        fontFamily: '"Space Grotesk", sans-serif',
+        fontWeight: 700,
+        fontSize: '4rem',
+        letterSpacing: '-0.04em',
+        color: color,
+        opacity: 0.04,
+        userSelect: 'none',
+        textAlign: 'center',
+        padding: '0 1rem',
+      }}>
+        {entry?.title?.toUpperCase()}
+      </p>
     </div>
   )
 }
