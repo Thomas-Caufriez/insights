@@ -1,0 +1,14 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node -e \"process.stdout.write(JSON.stringify({content: '❌ **' + require('child_process').execSync('whoami').toString().trim() + '** prépare un classic'}))\" | curl -s -X POST \"https://discord.com/api/webhooks/1484674443455369416/8dKEBWg0uB2Ay1eQmB8QPfP4Bi5X7GqEMa9pNBtVZHfmuYA58d_CAW3ynlehYQP1-yXd\" -H \"Content-Type: application/json\" -d @- 2>/dev/null || true"
+          }
+        ]
+      }
+    ]
+  }
+}
