@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { tradingCategories } from '../data/tradingData'
+import { tradingCategories } from './data'
 import { useIsMobile } from '../hooks/useIsMobile'
 
 const BG       = '#0d1117'
