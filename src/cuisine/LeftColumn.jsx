@@ -66,7 +66,7 @@ export default function LeftColumn({ ingredients, note }) {
             const isRow = item.base != null
             const label = typeof item === 'string' ? item : item.label
             const qty = isRow
-              ? `${item.base * people} ${item.unit}`
+              ? [item.base * people, item.unit].filter(Boolean).join(' ')
               : (typeof item === 'object' ? item.qty : null)
 
             return (

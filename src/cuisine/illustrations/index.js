@@ -7,6 +7,7 @@ import FingerMeasureIllustration from './FingerMeasureIllustration'
 import LimoncelloIllustration from './LimoncelloIllustration'
 import MaiTaiIllustration from './MaiTaiIllustration'
 import PornStarIllustration from './PornStarIllustration'
+import PinkPantherIllustration from './PinkPantherIllustration'
 
 export const illustrations = {
   'chicken-mustard': ChickenMustardIllustration,
@@ -18,6 +19,7 @@ export const illustrations = {
   'limoncello': LimoncelloIllustration,
   'mai-tai': MaiTaiIllustration,
   'porn-star': PornStarIllustration,
+  'pink-panther': PinkPantherIllustration,
 }
 
 export function getIllustration(key) {
