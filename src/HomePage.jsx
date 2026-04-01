@@ -26,6 +26,15 @@ const categories = [
     hoverBorder: 'rgba(0,212,170,0.4)',
     dot: '#00d4aa',
   },
+  {
+    id: 'fromages',
+    label: 'Fromages',
+    description: 'Familles, histoires, textures, accords mets & vins.',
+    accentColor: '#d4a44c',
+    borderColor: 'rgba(212,164,76,0.15)',
+    hoverBorder: 'rgba(212,164,76,0.4)',
+    dot: '#d4a44c',
+  },
 ]
 
 export default function HomePage({ onSelect }) {
