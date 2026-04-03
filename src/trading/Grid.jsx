@@ -1,15 +1,19 @@
 import { useState } from 'react'
 import { tradingCategories } from './data'
 
-const ACCENT   = '#00e5b8'
-const BG       = '#0d1117'
-const CARD_BG  = '#0f1623'
-const CARD_HOV = '#131d2e'
-const TEXT     = '#d1d8e8'
-const TEXT_DIM = 'rgba(209,216,232,0.4)'
-const BORDER   = 'rgba(255,255,255,0.06)'
-const FONT     = '"Plus Jakarta Sans", sans-serif'
-const MONO     = '"Space Mono", monospace'
+const NEON_GREEN = '#00ff88'
+const NEON_PINK  = '#ff2d78'
+const NEON_CYAN  = '#00f5ff'
+const NEON_PURP  = '#c44fff'
+const ACCENT     = NEON_CYAN
+const BG         = '#09000f'
+const CARD_BG    = '#0e0018'
+const CARD_HOV   = '#160025'
+const TEXT       = '#f5e6ff'
+const TEXT_DIM   = 'rgba(245,230,255,0.4)'
+const BORDER     = 'rgba(196,79,255,0.15)'
+const FONT       = '"Plus Jakarta Sans", sans-serif'
+const MONO       = '"Space Mono", monospace'
 
 export default function TradingGrid({ entries, filterId, onSelect, isMobile, onBack }) {
   const [search, setSearch] = useState('')
@@ -26,7 +30,15 @@ export default function TradingGrid({ entries, filterId, onSelect, isMobile, onB
     : filtered
 
   return (
-    <div style={{ height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden', background: BG }}>
+    <div style={{
+      height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden',
+      background: BG,
+      backgroundImage: `
+        linear-gradient(rgba(196,79,255,0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(196,79,255,0.04) 1px, transparent 1px)
+      `,
+      backgroundSize: '40px 40px',
+    }}>
 
       {/* Header */}
       <div style={{
@@ -103,8 +115,8 @@ export default function TradingGrid({ entries, filterId, onSelect, isMobile, onB
                 padding: '0.42rem 0.75rem 0.42rem 2rem', outline: 'none',
                 transition: 'border-color 0.15s',
               }}
-              onFocus={(e) => (e.target.style.borderColor = `${color}55`)}
-              onBlur={(e)  => (e.target.style.borderColor = BORDER)}
+              onFocus={(e) => { e.target.style.borderColor = `${color}88`; e.target.style.boxShadow = `0 0 12px ${color}22` }}
+              onBlur={(e)  => { e.target.style.borderColor = BORDER; e.target.style.boxShadow = 'none' }}
             />
             {search && (
               <button onClick={() => setSearch('')} style={{
@@ -163,13 +175,19 @@ function TradingCard({ entry, color, onClick }) {
         background: CARD_BG, border: 'none', borderRadius: 0,
         overflow: 'hidden', cursor: 'pointer', transition: 'background 0.15s',
       }}
-      onMouseEnter={(e) => { e.currentTarget.style.background = CARD_HOV }}
-      onMouseLeave={(e) => { e.currentTarget.style.background = CARD_BG }}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.background = CARD_HOV
+        e.currentTarget.style.boxShadow = `inset 0 0 0 1px ${color}33, 0 0 20px ${color}11`
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.background = CARD_BG
+        e.currentTarget.style.boxShadow = 'none'
+      }}
     >
       {/* Preview */}
       <div style={{
         height: '100px', flexShrink: 0,
-        background: '#090d16', overflow: 'hidden',
+        background: '#07000e', overflow: 'hidden',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         position: 'relative', borderBottom: `1px solid ${BORDER}`,
       }}>

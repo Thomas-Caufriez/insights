@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(node -e \"const v = require\\('./node_modules/vite/package.json'\\); console.log\\('vite:', v.version\\)\")",
+      "Bash(npx vite:*)",
+      "Bash(nvm list:*)",
+      "WebSearch"
+    ]
+  }
+}
