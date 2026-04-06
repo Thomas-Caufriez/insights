@@ -8,6 +8,7 @@ import LimoncelloIllustration from './LimoncelloIllustration'
 import MaiTaiIllustration from './MaiTaiIllustration'
 import PornStarIllustration from './PornStarIllustration'
 import PinkPantherIllustration from './PinkPantherIllustration'
+import KiwiIllustration from './KiwiIllustration'
 
 export const illustrations = {
   'chicken-mustard': ChickenMustardIllustration,
@@ -20,6 +21,7 @@ export const illustrations = {
   'mai-tai': MaiTaiIllustration,
   'porn-star': PornStarIllustration,
   'pink-panther': PinkPantherIllustration,
+  'kiwi': KiwiIllustration,
 }
 
 export function getIllustration(key) {

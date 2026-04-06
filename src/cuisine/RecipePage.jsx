@@ -16,7 +16,8 @@ export function RecipePageHeader({ entry }) {
         <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginTop: '1rem' }}>
           <Badge label={entry.time} />
           <Badge label={entry.difficulty} />
-          <Badge label={`${entry.servings} personne`} />
+          {entry.servings != null && <Badge label={`${entry.servings} personne${entry.servings > 1 ? 's' : ''}`} />}
+          {entry.tags?.map((tag) => <Badge key={tag} label={tag} />)}
         </div>
       </div>
       {Illustration && (
