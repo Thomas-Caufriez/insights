@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { tradingCategories } from './data'
 import { useIsMobile } from '../hooks/useIsMobile'
 
@@ -13,8 +13,8 @@ const ACCENT     = NEON_CYAN
 const TEXT       = '#f5e6ff'
 const TEXT_DIM   = 'rgba(245,230,255,0.4)'
 const BORDER     = 'rgba(196,79,255,0.15)'
-const FONT       = '"Plus Jakarta Sans", sans-serif'
-const MONO       = '"Space Mono", monospace'
+const FONT       = '"DM Sans", sans-serif'
+const MONO       = '"Plus Jakarta Sans", sans-serif'
 
 const SESSIONS = [
   { name: 'Sydney',    timezone: 'Australia/Sydney',  openUTC: 22, closeUTC: 7  },
@@ -199,101 +199,375 @@ export default function TradingDashboard({ onSelectCategory, onHome, isMobile })
 
 // ─── Live prices ──────────────────────────────────────────────────────────────
 
+const REFRESH_INTERVAL = 30
+
 function LivePricesWidget() {
-  const [btc, setBtc]         = useState(null)
-  const [eur, setEur]         = useState(null)
-  const [loading, setLoading] = useState(true)
-  const [lastUpdate, setLastUpdate] = useState(null)
+  const [btc,  setBtc]  = useState(null)
+  const [eur,  setEur]  = useState(null)
+  const [gold, setGold] = useState(null)
+  const [sp,   setSp]   = useState(null)
+  const [jpy,     setJpy]     = useState(null)
+  const [oil,     setOil]     = useState(null)
+  const [flipped,  setFlipped]  = useState({})
+  const [flashMap, setFlashMap] = useState({})
+  const [loading,   setLoading]   = useState(true)
+  const [spinning,  setSpinning]  = useState(false)
+  const [countdown, setCountdown] = useState(REFRESH_INTERVAL)
+
+  const autoRef    = useRef(null)
+  const tickRef    = useRef(null)
+  const prevPrices = useRef({})
+
+  useEffect(() => {
+    const style = document.createElement('style')
+    style.textContent = `
+      @keyframes priceUp   { 0% { color: #00ff88; text-shadow: 0 0 18px #00ff8877; } 100% { color: #f5e6ff; text-shadow: none; } }
+      @keyframes priceDown { 0% { color: #ff2d78; text-shadow: 0 0 18px #ff2d7877; } 100% { color: #f5e6ff; text-shadow: none; } }
+    `
+    document.head.appendChild(style)
+    return () => document.head.removeChild(style)
+  }, [])
+
+  function triggerFlash(key, newPrice) {
+    const prev = prevPrices.current[key]
+    if (prev != null && newPrice != null && newPrice !== prev) {
+      const dir = newPrice > prev ? 'up' : 'down'
+      setFlashMap(f => ({ ...f, [key]: dir }))
+      setTimeout(() => setFlashMap(f => ({ ...f, [key]: null })), 900)
+    }
+    prevPrices.current[key] = newPrice
+  }
+
+  async function fetchWithTimeout(url, ms = 8000) {
+    const ctrl = new AbortController()
+    const timer = setTimeout(() => ctrl.abort(), ms)
+    try {
+      const res = await fetch(url, { signal: ctrl.signal })
+      clearTimeout(timer)
+      return res
+    } catch (e) {
+      clearTimeout(timer)
+      throw e
+    }
+  }
 
   async function fetchPrices() {
     try {
-      const [btcRes, eurRes] = await Promise.all([
-        fetch('https://api.binance.com/api/v3/ticker/24hr?symbol=BTCUSDT'),
-        fetch('https://api.frankfurter.app/latest?from=EUR&to=USD'),
+      const binance = import.meta.env.DEV ? '/proxy/binance' : 'https://api.binance.com'
+      const yahoo   = import.meta.env.DEV ? '/proxy/yahoo'   : 'https://query1.finance.yahoo.com'
+
+      const [btcResult, goldResult, eurResult, jpyResult, spResult, oilResult] = await Promise.allSettled([
+        fetchWithTimeout(`${binance}/api/v3/ticker/24hr?symbol=BTCUSDT`),
+        fetchWithTimeout(`${binance}/api/v3/ticker/24hr?symbol=PAXGUSDT`),
+        fetchWithTimeout(`${binance}/api/v3/ticker/24hr?symbol=EURUSDT`),
+        fetchWithTimeout(`${yahoo}/v8/finance/chart/JPYUSD%3DX?interval=1m&range=1d`),
+        fetchWithTimeout(`${yahoo}/v8/finance/chart/%5EGSPC?interval=1d&range=2d`),
+        fetchWithTimeout(`${yahoo}/v8/finance/chart/CL%3DF?interval=1d&range=2d`),
       ])
-      if (!btcRes.ok || !eurRes.ok) throw new Error()
-      const btcData = await btcRes.json()
-      const eurData = await eurRes.json()
-      setBtc({ price: parseFloat(btcData.lastPrice), change: parseFloat(btcData.priceChangePercent) })
-      setEur({ rate: eurData.rates.USD })
-      setLastUpdate(new Date())
-    } catch {
-      // keep previous data on error
+
+      if (btcResult.status === 'fulfilled' && btcResult.value.ok) {
+        try {
+          const d = await btcResult.value.json()
+          const price = parseFloat(d.lastPrice)
+          setBtc({ price, change: parseFloat(d.priceChangePercent) })
+          triggerFlash('btc', price)
+        } catch {}
+      }
+      if (goldResult.status === 'fulfilled' && goldResult.value.ok) {
+        try {
+          const d = await goldResult.value.json()
+          const price = parseFloat(d.lastPrice)
+          setGold({ price, change: parseFloat(d.priceChangePercent) })
+          triggerFlash('gold', price)
+        } catch {}
+      }
+      if (eurResult.status === 'fulfilled' && eurResult.value.ok) {
+        try {
+          const d = await eurResult.value.json()
+          const rate = parseFloat(d.lastPrice)
+          setEur({ rate, change: parseFloat(d.priceChangePercent) })
+          triggerFlash('eur', rate)
+        } catch {}
+      }
+      if (jpyResult.status === 'fulfilled' && jpyResult.value.ok) {
+        try {
+          const d = await jpyResult.value.json()
+          const meta = d.chart.result[0].meta
+          const rate = meta.regularMarketPrice
+          const prev = meta.chartPreviousClose
+          setJpy({ rate, change: prev ? ((rate - prev) / prev) * 100 : null })
+          triggerFlash('jpy', rate)
+        } catch {}
+      }
+      if (spResult.status === 'fulfilled' && spResult.value.ok) {
+        try {
+          const d = await spResult.value.json()
+          const meta = d.chart.result[0].meta
+          const price = meta.regularMarketPrice
+          setSp({ price, change: ((price - meta.chartPreviousClose) / meta.chartPreviousClose) * 100 })
+          triggerFlash('sp', price)
+        } catch {}
+      }
+      if (oilResult.status === 'fulfilled' && oilResult.value.ok) {
+        try {
+          const d = await oilResult.value.json()
+          const meta = d.chart.result[0].meta
+          const price = meta.regularMarketPrice
+          setOil({ price, change: ((price - meta.chartPreviousClose) / meta.chartPreviousClose) * 100 })
+          triggerFlash('oil', price)
+        } catch {}
+      }
     } finally {
       setLoading(false)
     }
   }
 
+  function startCountdown() {
+    clearInterval(tickRef.current)
+    setCountdown(REFRESH_INTERVAL)
+    tickRef.current = setInterval(() => setCountdown(c => Math.max(0, c - 1)), 1000)
+  }
+
+  function scheduleAuto() {
+    clearInterval(autoRef.current)
+    autoRef.current = setInterval(() => { fetchPrices(); startCountdown() }, REFRESH_INTERVAL * 1000)
+  }
+
+  async function handleRefresh() {
+    if (spinning) return
+    setSpinning(true)
+    scheduleAuto()
+    startCountdown()
+    await fetchPrices()
+    setSpinning(false)
+  }
+
   useEffect(() => {
     fetchPrices()
-    const id = setInterval(fetchPrices, 30000)
-    return () => clearInterval(id)
+    scheduleAuto()
+    startCountdown()
+    return () => { clearInterval(autoRef.current); clearInterval(tickRef.current) }
   }, [])
+
+  function getMarketStatus(market) {
+    if (!market) return null
+    const now = new Date()
+    const day = now.toLocaleDateString('en-US', { timeZone: market.tz, weekday: 'short' })
+    if (['Sat', 'Sun'].includes(day)) return false
+    if (market.type === 'forex') {
+      if (day === 'Fri') {
+        const t = now.toLocaleTimeString('en-US', { timeZone: market.tz, hour12: false, hour: '2-digit', minute: '2-digit' })
+        const [h, m] = t.split(':').map(Number)
+        return h + m / 60 < 17
+      }
+      return true
+    }
+    const t = now.toLocaleTimeString('en-US', { timeZone: market.tz, hour12: false, hour: '2-digit', minute: '2-digit' })
+    const [h, m] = t.split(':').map(Number)
+    const time = h + m / 60
+    return time >= market.open && time < market.close
+  }
+
+  function toggleFlip(symbol) {
+    setFlipped(f => ({ ...f, [symbol]: !f[symbol] }))
+  }
+
+  function fmtInverted(price) {
+    if (!price || price <= 0) return '—'
+    const inv = 1 / price
+    if (inv >= 10000) return inv.toLocaleString('en-US', { maximumFractionDigits: 0 })
+    if (inv >= 100)   return inv.toFixed(2)
+    if (inv >= 1)     return inv.toFixed(4)
+    if (inv >= 0.001) return inv.toFixed(6)
+    return inv.toExponential(3)
+  }
 
   const assets = [
     {
-      symbol: 'BTC / USD',
+      symbol: 'BTC / USDT',
       name: 'Bitcoin',
       price: btc ? `$${btc.price.toLocaleString('en-US', { maximumFractionDigits: 0 })}` : null,
       change: btc?.change ?? null,
       color: '#ff9900',
+      info: 'Données Binance · Paire Bitcoin / Tether · Mise à jour toutes les 30s',
+      flashKey: 'btc',
     },
     {
-      symbol: 'EUR / USD',
-      name: 'Euro · Dollar',
+      symbol: 'EUR / USDT',
+      name: 'Euro · Tether',
       price: eur ? eur.rate.toFixed(4) : null,
-      change: null,
-      note: 'ECB',
+      change: eur?.change ?? null,
       color: NEON_CYAN,
+      info: 'Données Binance · Paire Euro / Tether · Taux de change en temps réel',
+      flipSymbol: 'USDT / EUR', rawPrice: eur?.rate ?? null,
+      flashKey: 'eur',
+      market: { type: 'forex', tz: 'America/New_York' },
+    },
+    {
+      symbol: 'XAU / USDT',
+      name: 'Or',
+      price: gold ? `$${gold.price.toLocaleString('en-US', { maximumFractionDigits: 0 })}` : null,
+      change: gold?.change ?? null,
+      color: '#ffd700',
+      info: 'Données Binance · PAX Gold (PAXG) — or tokenisé, 1 token = 1 once troy · Proche du cours spot',
+      flashKey: 'gold',
+    },
+    {
+      symbol: 'JPY / USDT',
+      name: 'Yen · Tether',
+      price: jpy ? jpy.rate.toFixed(5) : null,
+      change: jpy?.change ?? null,
+      color: '#ff6b9d',
+      info: 'Données Yahoo Finance · Yen japonais / Dollar US · Taux de change en temps réel',
+      flipSymbol: 'USDT / JPY', rawPrice: jpy?.rate ?? null,
+      flashKey: 'jpy',
+      market: { type: 'forex', tz: 'America/New_York' },
+    },
+    {
+      symbol: 'S&P 500',
+      name: 'Indice US',
+      price: sp ? sp.price.toLocaleString('en-US', { maximumFractionDigits: 2 }) : null,
+      change: sp?.change ?? null,
+      color: '#7c85f0',
+      info: 'Données Yahoo Finance · Indice boursier américain · 500 plus grandes capitalisations US',
+      flashKey: 'sp',
+      market: { tz: 'America/New_York', open: 9.5, close: 16 },
+    },
+    {
+      symbol: 'WTI / USD',
+      name: 'Pétrole brut',
+      price: oil ? `$${oil.price.toFixed(2)}` : null,
+      change: oil?.change ?? null,
+      color: '#a0522d',
+      info: 'Données Yahoo Finance · WTI Crude Oil (contrat futures) · Prix par baril en dollars',
+      flashKey: 'oil',
     },
   ]
 
   return (
     <div style={{ padding: '1.4rem 1.75rem', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+
+      {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <p style={{ ...labelSt, marginBottom: 0 }}>Marchés</p>
-        {lastUpdate && (
-          <span style={{ fontFamily: MONO, fontSize: '0.52rem', color: TEXT_DIM }}>
-            {getLocalTime('UTC')} UTC
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+          <span style={{ fontFamily: MONO, fontSize: '0.72rem', fontWeight: 600, color: `${NEON_CYAN}99`, minWidth: '2rem', textAlign: 'right' }}>
+            {countdown}s
           </span>
-        )}
+          <button
+            onClick={handleRefresh}
+            title="Rafraîchir"
+            style={{
+              fontFamily: FONT, fontSize: '0.85rem',
+              color: spinning ? TEXT_DIM : NEON_CYAN,
+              background: 'none',
+              border: `1px solid ${spinning ? BORDER : `${NEON_CYAN}44`}`,
+              borderRadius: '6px',
+              width: '26px', height: '22px',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              cursor: spinning ? 'default' : 'pointer',
+              transition: 'color 0.15s, border-color 0.15s',
+              lineHeight: 1,
+            }}
+            onMouseEnter={(e) => { if (!spinning) e.currentTarget.style.boxShadow = `0 0 8px ${NEON_CYAN}44` }}
+            onMouseLeave={(e) => { e.currentTarget.style.boxShadow = 'none' }}
+          >
+            ↻
+          </button>
+        </div>
       </div>
 
-      <div style={{ display: 'flex', gap: '2.5rem', flexWrap: 'wrap' }}>
-        {assets.map((a) => (
-          <div key={a.symbol}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.3rem' }}>
-              <span style={{ fontFamily: FONT, fontSize: '0.68rem', fontWeight: 700, color: a.color, letterSpacing: '0.06em' }}>
-                {a.symbol}
-              </span>
-              {a.note && (
-                <span style={{ fontFamily: MONO, fontSize: '0.48rem', color: TEXT_DIM, border: `1px solid ${BORDER}`, borderRadius: '4px', padding: '0.05rem 0.3rem' }}>
-                  {a.note}
+      {/* Assets */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: '0.6rem' }}>
+        {assets.map((a) => {
+          const isFlipped    = !!flipped[a.symbol]
+          const displaySymbol = isFlipped ? a.flipSymbol : a.symbol
+          const displayPrice  = isFlipped ? fmtInverted(a.rawPrice) : (a.price ?? '—')
+          const displayChange = a.change != null ? (isFlipped ? -a.change : a.change) : null
+          const open          = a.market ? getMarketStatus(a.market) : null
+          return (
+            <div key={a.symbol} style={{
+              background: 'rgba(196,79,255,0.03)',
+              border: `1px solid ${BORDER}`,
+              borderLeft: `3px solid ${a.color}`,
+              borderRadius: '10px',
+              padding: '0.85rem 0.9rem',
+              display: 'flex', flexDirection: 'column', gap: '0.5rem',
+            }}>
+
+              {/* Symbol row */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                <span style={{ fontFamily: FONT, fontSize: '0.66rem', fontWeight: 700, color: a.color, letterSpacing: '0.05em', flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {displaySymbol}
                 </span>
-              )}
-            </div>
-            {loading ? (
-              <div style={{ width: '120px', height: '2rem', background: 'rgba(196,79,255,0.07)', borderRadius: '6px' }} />
-            ) : (
-              <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.75rem' }}>
-                <span style={{ fontFamily: MONO, fontSize: '1.6rem', fontWeight: 700, color: TEXT, letterSpacing: '-0.02em' }}>
-                  {a.price ?? '—'}
-                </span>
-                {a.change != null && (
+                <InfoTooltip text={a.info} />
+                {a.flipSymbol && (
+                  <button
+                    onClick={() => toggleFlip(a.symbol)}
+                    title="Inverser la paire"
+                    style={{
+                      fontFamily: FONT, fontSize: '0.65rem',
+                      color: isFlipped ? a.color : TEXT_DIM,
+                      background: 'none', border: 'none',
+                      cursor: 'pointer', padding: 0, lineHeight: 1,
+                      transition: 'color 0.15s', flexShrink: 0,
+                    }}
+                    onMouseEnter={(e) => (e.currentTarget.style.color = a.color)}
+                    onMouseLeave={(e) => (e.currentTarget.style.color = isFlipped ? a.color : TEXT_DIM)}
+                  >
+                    ⇄
+                  </button>
+                )}
+              </div>
+
+              {/* Price + change */}
+              {loading ? (
+                <div style={{ height: '1.8rem', background: 'rgba(196,79,255,0.07)', borderRadius: '5px' }} />
+              ) : (
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.4rem', flexWrap: 'wrap' }}>
                   <span style={{
-                    fontFamily: FONT, fontSize: '0.85rem', fontWeight: 700,
-                    color: a.change >= 0 ? NEON_GREEN : NEON_PINK,
-                    textShadow: a.change >= 0 ? `0 0 10px ${NEON_GREEN}66` : `0 0 10px ${NEON_PINK}66`,
+                    fontFamily: MONO, fontSize: '1.25rem', fontWeight: 700, color: TEXT, letterSpacing: '-0.02em',
+                    animation: flashMap[a.flashKey] ? `price${flashMap[a.flashKey] === 'up' ? 'Up' : 'Down'} 0.9s ease-out forwards` : 'none',
                   }}>
-                    {a.change >= 0 ? '+' : ''}{a.change.toFixed(2)}%
+                    {displayPrice}
+                  </span>
+                  {displayChange != null && (
+                    <span style={{
+                      fontFamily: FONT, fontSize: '0.72rem', fontWeight: 700,
+                      color: displayChange >= 0 ? NEON_GREEN : NEON_PINK,
+                      textShadow: displayChange >= 0 ? `0 0 8px ${NEON_GREEN}66` : `0 0 8px ${NEON_PINK}66`,
+                    }}>
+                      {displayChange >= 0 ? '+' : ''}{displayChange.toFixed(2)}%
+                    </span>
+                  )}
+                </div>
+              )}
+
+              {/* Footer: name + status */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.3rem' }}>
+                <span style={{ fontFamily: FONT, fontSize: '0.62rem', color: TEXT_DIM }}>{a.name}</span>
+                {open !== null && (
+                  <span style={{
+                    fontFamily: FONT, fontSize: '0.52rem', fontWeight: 700, letterSpacing: '0.06em',
+                    color: open ? NEON_GREEN : TEXT_DIM,
+                    display: 'flex', alignItems: 'center', gap: '0.2rem', flexShrink: 0,
+                  }}>
+                    <span style={{
+                      width: '4px', height: '4px', borderRadius: '50%',
+                      background: open ? NEON_GREEN : 'rgba(196,79,255,0.3)',
+                      boxShadow: open ? `0 0 4px ${NEON_GREEN}` : 'none',
+                    }} />
+                    {open ? 'OUVERT' : 'FERMÉ'}
                   </span>
                 )}
               </div>
-            )}
-            <span style={{ fontFamily: FONT, fontSize: '0.65rem', color: TEXT_DIM }}>{a.name}</span>
-          </div>
-        ))}
+
+            </div>
+          )
+        })}
       </div>
+
+
     </div>
   )
 }

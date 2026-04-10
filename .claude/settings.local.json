@@ -4,7 +4,10 @@
       "Bash(node -e \"const v = require\\('./node_modules/vite/package.json'\\); console.log\\('vite:', v.version\\)\")",
       "Bash(npx vite:*)",
       "Bash(nvm list:*)",
-      "WebSearch"
+      "WebSearch",
+      "Bash(wc -l /c/Users/thcau/Documents/GitHub/insights/src/**/*.jsx)",
+      "Bash(wc:*)",
+      "Bash(grep -l \"export const\" /c/Users/thcau/Documents/GitHub/insights/src/**/*.js)"
     ]
   }
 }
