@@ -35,6 +35,15 @@ const categories = [
     hoverBorder: 'rgba(212,164,76,0.4)',
     dot: '#d4a44c',
   },
+  {
+    id: 'boissons',
+    label: 'Boissons',
+    description: 'Cocktails tiki, liqueurs maison, shakers & recettes.',
+    accentColor: '#00d4b8',
+    borderColor: 'rgba(0,212,184,0.15)',
+    hoverBorder: 'rgba(0,212,184,0.4)',
+    dot: '#00d4b8',
+  },
 ]
 
 export default function HomePage({ onSelect }) {
