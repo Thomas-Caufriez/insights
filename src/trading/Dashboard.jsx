@@ -202,7 +202,7 @@ export default function TradingDashboard({ onSelectCategory, onHome, isMobile })
 const BINANCE_INTERVAL = 30
 const TD_INTERVAL      = 300
 const TD_KEY           = '96cc1cc4671f46e292207720fc5e4bbf'
-const TD_SYMBOLS       = 'JPY/USD,GBP/USD'
+const TD_SYMBOLS       = 'JPY/USD,GBP/USD,SPY'
 
 function LivePricesWidget() {
   const [btc,  setBtc]  = useState(null)
@@ -212,6 +212,7 @@ function LivePricesWidget() {
   const [jpy,  setJpy]  = useState(null)
   const [peg,  setPeg]  = useState(null)
   const [eth,  setEth]  = useState(null)
+  const [spy,  setSpy]  = useState(null)
   const [fearGreed,      setFearGreed]        = useState(null)
   const [flipped,         setFlipped]         = useState({})
   const [flashMap,        setFlashMap]        = useState({})
@@ -317,8 +318,12 @@ function LivePricesWidget() {
           const change = parseFloat(item.percent_change)
           return { price: isNaN(price) ? null : price, change: isNaN(change) ? null : change }
         }
-        const jpy = parseTD('JPY/USD'); if (jpy?.price != null) { setJpy({ rate: jpy.price, change: jpy.change }); triggerFlash('jpy', jpy.price) }
-        const gbp = parseTD('GBP/USD'); if (gbp?.price != null) { setGbp({ price: gbp.price, change: gbp.change }); triggerFlash('gbp', gbp.price) }
+        console.log('TwelveData response keys:', JSON.stringify(Object.keys(d)))
+        console.log('IWDA:LSE data:', JSON.stringify(d['IWDA:LSE']))
+        const jpy  = parseTD('JPY/USD');  if (jpy?.price  != null) { setJpy({ rate: jpy.price, change: jpy.change }); triggerFlash('jpy', jpy.price) }
+        const gbp  = parseTD('GBP/USD');  if (gbp?.price  != null) { setGbp({ price: gbp.price, change: gbp.change }); triggerFlash('gbp', gbp.price) }
+        const spy  = parseTD('SPY');      if (spy?.price  != null) { setSpy({ price: spy.price, change: spy.change }); triggerFlash('spy', spy.price) }
+        const iwda = parseTD('IWDA:LSE'); if (iwda?.price != null) { setIwda({ price: iwda.price, change: iwda.change }); triggerFlash('iwda', iwda.price) }
       }
     } finally {
       setLoadingTD(false)
@@ -467,6 +472,20 @@ function LivePricesWidget() {
       info: 'Données Twelve Data · GBP/USD spot · Cours réel depuis les marchés forex · Mis à jour toutes les 5 min',
       flipSymbol: 'USD / GBP', rawPrice: gbp?.price ?? null,
       market: { type: 'forex', tz: 'America/New_York' },
+    },
+    {
+      symbol: 'SPY', name: 'SPDR S&P 500 ETF',
+      price: spy?.price != null ? `$${spy.price.toFixed(2)}` : null,
+      change: spy?.change ?? null, color: '#34d399', flashKey: 'spy',
+      info: 'Données Twelve Data · SPY NYSE · S&P 500 ETF · Mis à jour toutes les 5 min',
+      market: { type: 'stock', tz: 'America/New_York', open: 9.5, close: 16 },
+    },
+    {
+      symbol: 'IWDA', name: 'iShares MSCI World ETF',
+      price: iwda?.price != null ? `$${iwda.price.toFixed(2)}` : null,
+      change: iwda?.change ?? null, color: '#60a5fa', flashKey: 'iwda',
+      info: 'Données Twelve Data · IWDA LSE · MSCI World UCITS ETF · Mis à jour toutes les 5 min',
+      market: { type: 'stock', tz: 'Europe/London', open: 8, close: 16.5 },
     },
   ]
 

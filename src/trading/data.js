@@ -32,6 +32,70 @@ export const tradingEntries = [
     notes: 'Bitcoin se comporte de plus en plus comme de l\'or numérique : réserve de valeur à long terme, pas un outil de transaction quotidien. Les institutionnels (ETF, MicroStrategy) en font désormais un actif de bilan.',
   },
   {
+    id: 'spy',
+    type: 'asset',
+    categoryId: 'bases',
+    subcategoryId: null,
+    market: 'ETF',
+    title: 'SPY',
+    subtitle: 'SPDR S&P 500 ETF — L\'indice américain par excellence',
+    risk: 'Modéré',
+    timeframe: 'Long terme',
+    stats: [
+      { label: 'Ticker', value: 'SPY' },
+      { label: 'Exchange', value: 'NYSE' },
+      { label: 'Devise', value: 'USD' },
+      { label: 'Indice suivi', value: 'S&P 500' },
+    ],
+    sections: [
+      {
+        title: 'Ce que c\'est',
+        text: 'SPY (SPDR S&P 500 ETF Trust) est le premier ETF coté aux États-Unis, lancé en 1993 par State Street. Il réplique fidèlement la performance du S&P 500, l\'indice regroupant les 500 plus grandes entreprises américaines cotées en bourse.',
+      },
+      {
+        title: 'Pourquoi c\'est une référence',
+        text: 'Le S&P 500 est l\'indice de référence mondial pour mesurer la santé des marchés actions américains. Il concentre des géants comme Apple, Microsoft, Nvidia, Amazon et Google. Historiquement, il délivre un rendement annuel moyen d\'environ 10% sur le long terme.',
+      },
+      {
+        title: 'Risques à connaître',
+        text: 'SPY est exposé à 100% aux actions américaines — une correction du marché US impacte directement sa valeur. Pas de diversification géographique. En période de récession ou de krach, des baisses de -30% à -50% sont possibles, même si le marché a toujours fini par se redresser historiquement.',
+      },
+    ],
+    notes: 'SPY est la version la plus liquide et tradée du S&P 500. Pour un investisseur long terme en DCA, VOO (Vanguard) ou IVV (iShares) ont des frais légèrement plus bas. SPY est davantage utilisé par les traders actifs pour sa liquidité extrême.',
+  },
+  {
+    id: 'iwda',
+    type: 'asset',
+    categoryId: 'bases',
+    subcategoryId: null,
+    market: 'ETF',
+    title: 'IWDA',
+    subtitle: 'iShares Core MSCI World — La diversification mondiale',
+    risk: 'Modéré',
+    timeframe: 'Long terme',
+    stats: [
+      { label: 'Ticker', value: 'IWDA' },
+      { label: 'Exchange', value: 'LSE' },
+      { label: 'Devise', value: 'USD' },
+      { label: 'Indice suivi', value: 'MSCI World' },
+    ],
+    sections: [
+      {
+        title: 'Ce que c\'est',
+        text: 'IWDA (iShares Core MSCI World UCITS ETF) réplique l\'indice MSCI World, qui couvre environ 1 500 grandes et moyennes capitalisations dans 23 pays développés. C\'est l\'ETF mondial de référence pour les investisseurs européens souhaitant une exposition globale en un seul produit.',
+      },
+      {
+        title: 'Composition et diversification',
+        text: 'Environ 70% du portefeuille est exposé aux États-Unis, le reste réparti entre Europe, Japon, Canada et Australie. Contrairement à SPY, IWDA offre une diversification géographique qui réduit le risque de concentration sur un seul pays. Les secteurs tech, finance et santé dominent.',
+      },
+      {
+        title: 'Risques à connaître',
+        text: 'Malgré la diversification, la forte pondération américaine signifie que IWDA suit de près les marchés US. Le risque de change existe si votre devise de référence est l\'euro — une version hedgée existe (IWDH) mais avec des frais plus élevés. Sensible aux cycles économiques mondiaux.',
+      },
+    ],
+    notes: 'IWDA est souvent considéré comme le cœur idéal d\'un portefeuille passif européen. Associé à EMIM (marchés émergents), il forme la combinaison "MSCI All Country World" à moindre coût. Frais de gestion (TER) : 0,20% par an.',
+  },
+  {
     id: 'support-resistance',
     type: 'concept',
     categoryId: 'analyse',
@@ -169,7 +233,7 @@ export const tradingCategories = [
     label: 'Fondamentaux',
     fullLabel: 'Fondamentaux',
     color: '#7c85f0',
-    entryIds: ['bitcoin'],
+    entryIds: ['bitcoin', 'spy', 'iwda'],
     subcategories: [],
   },
   {
