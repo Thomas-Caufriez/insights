@@ -199,24 +199,35 @@ export default function TradingDashboard({ onSelectCategory, onHome, isMobile })
 
 // ─── Live prices ──────────────────────────────────────────────────────────────
 
-const REFRESH_INTERVAL = 30
+const BINANCE_INTERVAL = 30
+const TD_INTERVAL      = 300
+const TD_KEY           = '96cc1cc4671f46e292207720fc5e4bbf'
+const TD_SYMBOLS       = 'JPY/USD,GBP/USD'
 
 function LivePricesWidget() {
   const [btc,  setBtc]  = useState(null)
   const [eur,  setEur]  = useState(null)
+  const [gbp,  setGbp]  = useState(null)
   const [gold, setGold] = useState(null)
-  const [sp,   setSp]   = useState(null)
-  const [jpy,     setJpy]     = useState(null)
-  const [oil,     setOil]     = useState(null)
-  const [flipped,  setFlipped]  = useState({})
-  const [flashMap, setFlashMap] = useState({})
-  const [loading,   setLoading]   = useState(true)
-  const [spinning,  setSpinning]  = useState(false)
-  const [countdown, setCountdown] = useState(REFRESH_INTERVAL)
+  const [jpy,  setJpy]  = useState(null)
+  const [peg,  setPeg]  = useState(null)
+  const [eth,  setEth]  = useState(null)
+  const [fearGreed,      setFearGreed]        = useState(null)
+  const [flipped,         setFlipped]         = useState({})
+  const [flashMap,        setFlashMap]        = useState({})
+  const [loadingBinance,  setLoadingBinance]  = useState(true)
+  const [loadingTD,       setLoadingTD]       = useState(true)
+  const [countdownBinance, setCountdownBinance] = useState(BINANCE_INTERVAL)
+  const [countdownTD,      setCountdownTD]      = useState(TD_INTERVAL)
+  const [spinningBinance,  setSpinningBinance]  = useState(false)
 
-  const autoRef    = useRef(null)
-  const tickRef    = useRef(null)
-  const prevPrices = useRef({})
+  const autoBinanceRef   = useRef(null)
+  const autoTDRef        = useRef(null)
+  const tickBinanceRef   = useRef(null)
+  const tickTDRef        = useRef(null)
+  const prevPrices       = useRef({})
+  const fetchingBinance  = useRef(false)
+  const fetchingTD       = useRef(false)
 
   useEffect(() => {
     const style = document.createElement('style')
@@ -251,102 +262,127 @@ function LivePricesWidget() {
     }
   }
 
-  async function fetchPrices() {
+  async function fetchBinancePrices() {
+    if (fetchingBinance.current) return
+    fetchingBinance.current = true
     try {
-      const binance = import.meta.env.DEV ? '/proxy/binance' : 'https://api.binance.com'
-      const yahoo   = import.meta.env.DEV ? '/proxy/yahoo'   : 'https://query1.finance.yahoo.com'
-
-      const [btcResult, goldResult, eurResult, jpyResult, spResult, oilResult] = await Promise.allSettled([
-        fetchWithTimeout(`${binance}/api/v3/ticker/24hr?symbol=BTCUSDT`),
-        fetchWithTimeout(`${binance}/api/v3/ticker/24hr?symbol=PAXGUSDT`),
-        fetchWithTimeout(`${binance}/api/v3/ticker/24hr?symbol=EURUSDT`),
-        fetchWithTimeout(`${yahoo}/v8/finance/chart/JPYUSD%3DX?interval=1m&range=1d`),
-        fetchWithTimeout(`${yahoo}/v8/finance/chart/%5EGSPC?interval=1d&range=2d`),
-        fetchWithTimeout(`${yahoo}/v8/finance/chart/CL%3DF?interval=1d&range=2d`),
+      const base = import.meta.env.DEV ? '/proxy/binance' : 'https://api.binance.com'
+      const [btcRes, ethRes, goldRes, eurRes, pegRes] = await Promise.allSettled([
+        fetchWithTimeout(`${base}/api/v3/ticker/24hr?symbol=BTCUSDT`),
+        fetchWithTimeout(`${base}/api/v3/ticker/24hr?symbol=ETHUSDT`),
+        fetchWithTimeout(`${base}/api/v3/ticker/24hr?symbol=PAXGUSDT`),
+        fetchWithTimeout(`${base}/api/v3/ticker/24hr?symbol=EURUSDT`),
+        fetchWithTimeout(`${base}/api/v3/ticker/price?symbol=USDCUSDT`),
       ])
-
-      if (btcResult.status === 'fulfilled' && btcResult.value.ok) {
-        try {
-          const d = await btcResult.value.json()
+      const parse = (res, set, key) => {
+        if (res.status !== 'fulfilled' || !res.value.ok) return
+        res.value.json().then(d => {
           const price = parseFloat(d.lastPrice)
-          setBtc({ price, change: parseFloat(d.priceChangePercent) })
-          triggerFlash('btc', price)
-        } catch {}
+          set({ price, change: parseFloat(d.priceChangePercent), high: parseFloat(d.highPrice), low: parseFloat(d.lowPrice), volume: parseFloat(d.quoteVolume) })
+          triggerFlash(key, price)
+        }).catch(() => {})
       }
-      if (goldResult.status === 'fulfilled' && goldResult.value.ok) {
-        try {
-          const d = await goldResult.value.json()
-          const price = parseFloat(d.lastPrice)
-          setGold({ price, change: parseFloat(d.priceChangePercent) })
-          triggerFlash('gold', price)
-        } catch {}
-      }
-      if (eurResult.status === 'fulfilled' && eurResult.value.ok) {
-        try {
-          const d = await eurResult.value.json()
+      parse(btcRes,  setBtc,  'btc')
+      parse(ethRes,  setEth,  'eth')
+      parse(goldRes, setGold, 'gold')
+      const parseForex = (res, set, key) => {
+        if (res.status !== 'fulfilled' || !res.value.ok) return
+        res.value.json().then(d => {
           const rate = parseFloat(d.lastPrice)
-          setEur({ rate, change: parseFloat(d.priceChangePercent) })
-          triggerFlash('eur', rate)
-        } catch {}
+          set({ rate, change: parseFloat(d.priceChangePercent), high: parseFloat(d.highPrice), low: parseFloat(d.lowPrice), volume: parseFloat(d.quoteVolume) })
+          triggerFlash(key, rate)
+        }).catch(() => {})
       }
-      if (jpyResult.status === 'fulfilled' && jpyResult.value.ok) {
-        try {
-          const d = await jpyResult.value.json()
-          const meta = d.chart.result[0].meta
-          const rate = meta.regularMarketPrice
-          const prev = meta.chartPreviousClose
-          setJpy({ rate, change: prev ? ((rate - prev) / prev) * 100 : null })
-          triggerFlash('jpy', rate)
-        } catch {}
-      }
-      if (spResult.status === 'fulfilled' && spResult.value.ok) {
-        try {
-          const d = await spResult.value.json()
-          const meta = d.chart.result[0].meta
-          const price = meta.regularMarketPrice
-          setSp({ price, change: ((price - meta.chartPreviousClose) / meta.chartPreviousClose) * 100 })
-          triggerFlash('sp', price)
-        } catch {}
-      }
-      if (oilResult.status === 'fulfilled' && oilResult.value.ok) {
-        try {
-          const d = await oilResult.value.json()
-          const meta = d.chart.result[0].meta
-          const price = meta.regularMarketPrice
-          setOil({ price, change: ((price - meta.chartPreviousClose) / meta.chartPreviousClose) * 100 })
-          triggerFlash('oil', price)
-        } catch {}
+      parseForex(eurRes, setEur, 'eur')
+      if (pegRes.status === 'fulfilled' && pegRes.value.ok) {
+        pegRes.value.json().then(d => setPeg(parseFloat(d.price))).catch(() => {})
       }
     } finally {
-      setLoading(false)
+      setLoadingBinance(false)
+      fetchingBinance.current = false
     }
   }
 
-  function startCountdown() {
-    clearInterval(tickRef.current)
-    setCountdown(REFRESH_INTERVAL)
-    tickRef.current = setInterval(() => setCountdown(c => Math.max(0, c - 1)), 1000)
+  async function fetchTDPrices() {
+    if (fetchingTD.current) return
+    fetchingTD.current = true
+    try {
+      const res = await fetchWithTimeout(`https://api.twelvedata.com/quote?symbol=${TD_SYMBOLS}&apikey=${TD_KEY}`)
+      if (res.ok) {
+        const d = await res.json()
+        function parseTD(key) {
+          const item = d[key]
+          if (!item || item.status === 'error') return null
+          const price = parseFloat(item.close)
+          const change = parseFloat(item.percent_change)
+          return { price: isNaN(price) ? null : price, change: isNaN(change) ? null : change }
+        }
+        const jpy = parseTD('JPY/USD'); if (jpy?.price != null) { setJpy({ rate: jpy.price, change: jpy.change }); triggerFlash('jpy', jpy.price) }
+        const gbp = parseTD('GBP/USD'); if (gbp?.price != null) { setGbp({ price: gbp.price, change: gbp.change }); triggerFlash('gbp', gbp.price) }
+      }
+    } finally {
+      setLoadingTD(false)
+      fetchingTD.current = false
+    }
   }
 
-  function scheduleAuto() {
-    clearInterval(autoRef.current)
-    autoRef.current = setInterval(() => { fetchPrices(); startCountdown() }, REFRESH_INTERVAL * 1000)
+  async function fetchFearGreed() {
+    try {
+      const res = await fetchWithTimeout('https://api.alternative.me/fng/?limit=1')
+      if (res.ok) {
+        const d = await res.json()
+        const item = d.data?.[0]
+        if (item) setFearGreed({ value: parseInt(item.value), label: item.value_classification })
+      }
+    } catch {}
   }
 
-  async function handleRefresh() {
-    if (spinning) return
-    setSpinning(true)
-    scheduleAuto()
-    startCountdown()
-    await fetchPrices()
-    setSpinning(false)
+  function startCountdownBinance() {
+    clearInterval(tickBinanceRef.current)
+    setCountdownBinance(BINANCE_INTERVAL)
+    tickBinanceRef.current = setInterval(() => setCountdownBinance(c => Math.max(0, c - 1)), 1000)
+  }
+
+  function startCountdownTD() {
+    clearInterval(tickTDRef.current)
+    setCountdownTD(TD_INTERVAL)
+    tickTDRef.current = setInterval(() => setCountdownTD(c => Math.max(0, c - 1)), 1000)
+  }
+
+  async function handleBinanceRefresh() {
+    if (spinningBinance) return
+    setSpinningBinance(true)
+    startCountdownBinance()
+    clearInterval(autoBinanceRef.current)
+    autoBinanceRef.current = setInterval(() => { fetchBinancePrices(); startCountdownBinance() }, BINANCE_INTERVAL * 1000)
+    await fetchBinancePrices()
+    setSpinningBinance(false)
   }
 
   useEffect(() => {
-    fetchPrices()
-    scheduleAuto()
-    startCountdown()
-    return () => { clearInterval(autoRef.current); clearInterval(tickRef.current) }
+    let cancelled = false
+
+    fetchBinancePrices().then(() => {
+      if (cancelled) return
+      startCountdownBinance()
+      autoBinanceRef.current = setInterval(() => { fetchBinancePrices(); startCountdownBinance() }, BINANCE_INTERVAL * 1000)
+    })
+
+    fetchTDPrices().then(() => {
+      if (cancelled) return
+      startCountdownTD()
+      autoTDRef.current = setInterval(() => { fetchTDPrices(); startCountdownTD() }, TD_INTERVAL * 1000)
+    })
+
+    if (!cancelled) fetchFearGreed()
+
+    return () => {
+      cancelled = true
+      clearInterval(autoBinanceRef.current)
+      clearInterval(autoTDRef.current)
+      clearInterval(tickBinanceRef.current)
+      clearInterval(tickTDRef.current)
+    }
   }, [])
 
   function getMarketStatus(market) {
@@ -382,192 +418,328 @@ function LivePricesWidget() {
     return inv.toExponential(3)
   }
 
-  const assets = [
+  const binanceAssets = [
     {
-      symbol: 'BTC / USDT',
-      name: 'Bitcoin',
+      symbol: 'BTC / USDT', name: 'Bitcoin - Tether',
       price: btc ? `$${btc.price.toLocaleString('en-US', { maximumFractionDigits: 0 })}` : null,
-      change: btc?.change ?? null,
-      color: '#ff9900',
-      info: 'Données Binance · Paire Bitcoin / Tether · Mise à jour toutes les 30s',
-      flashKey: 'btc',
+      change: btc?.change ?? null, color: '#ff9900', flashKey: 'btc',
+      high: btc?.high, low: btc?.low, rawNum: btc?.price, volume: btc?.volume,
+      info: 'Données Binance · Paire Bitcoin / Tether',
     },
     {
-      symbol: 'EUR / USDT',
-      name: 'Euro · Tether',
-      price: eur ? eur.rate.toFixed(4) : null,
-      change: eur?.change ?? null,
-      color: NEON_CYAN,
-      info: 'Données Binance · Paire Euro / Tether · Taux de change en temps réel',
+      symbol: 'ETH / USDT', name: 'Ethereum - Tether',
+      price: eth ? `$${eth.price.toLocaleString('en-US', { maximumFractionDigits: 2 })}` : null,
+      change: eth?.change ?? null, color: '#627eea', flashKey: 'eth',
+      high: eth?.high, low: eth?.low, rawNum: eth?.price, volume: eth?.volume,
+      info: 'Données Binance · Paire Ethereum / Tether',
+    },
+    {
+      symbol: 'EUR / USDT', name: 'Euro - Tether',
+      price: eur?.rate != null ? eur.rate.toFixed(4) : null,
+      change: eur?.change ?? null, color: NEON_CYAN, flashKey: 'eur',
+      high: eur?.high, low: eur?.low, rawNum: eur?.rate, volume: eur?.volume,
+      info: 'Données Binance · Paire Euro / Tether · Proche du cours EUR/USD',
       flipSymbol: 'USDT / EUR', rawPrice: eur?.rate ?? null,
-      flashKey: 'eur',
       market: { type: 'forex', tz: 'America/New_York' },
     },
     {
-      symbol: 'XAU / USDT',
-      name: 'Or',
+      symbol: 'XAU / USDT', name: 'Or - Tether',
       price: gold ? `$${gold.price.toLocaleString('en-US', { maximumFractionDigits: 0 })}` : null,
-      change: gold?.change ?? null,
-      color: '#ffd700',
-      info: 'Données Binance · PAX Gold (PAXG) — or tokenisé, 1 token = 1 once troy · Proche du cours spot',
-      flashKey: 'gold',
-    },
-    {
-      symbol: 'JPY / USDT',
-      name: 'Yen · Tether',
-      price: jpy ? jpy.rate.toFixed(5) : null,
-      change: jpy?.change ?? null,
-      color: '#ff6b9d',
-      info: 'Données Yahoo Finance · Yen japonais / Dollar US · Taux de change en temps réel',
-      flipSymbol: 'USDT / JPY', rawPrice: jpy?.rate ?? null,
-      flashKey: 'jpy',
-      market: { type: 'forex', tz: 'America/New_York' },
-    },
-    {
-      symbol: 'S&P 500',
-      name: 'Indice US',
-      price: sp ? sp.price.toLocaleString('en-US', { maximumFractionDigits: 2 }) : null,
-      change: sp?.change ?? null,
-      color: '#7c85f0',
-      info: 'Données Yahoo Finance · Indice boursier américain · 500 plus grandes capitalisations US',
-      flashKey: 'sp',
-      market: { tz: 'America/New_York', open: 9.5, close: 16 },
-    },
-    {
-      symbol: 'WTI / USD',
-      name: 'Pétrole brut',
-      price: oil ? `$${oil.price.toFixed(2)}` : null,
-      change: oil?.change ?? null,
-      color: '#a0522d',
-      info: 'Données Yahoo Finance · WTI Crude Oil (contrat futures) · Prix par baril en dollars',
-      flashKey: 'oil',
+      change: gold?.change ?? null, color: '#ffd700', flashKey: 'gold',
+      high: gold?.high, low: gold?.low, rawNum: gold?.price, volume: gold?.volume,
+      info: 'Données Binance · PAX Gold (PAXG) — or tokenisé, 1 token = 1 once troy',
     },
   ]
 
-  return (
-    <div style={{ padding: '1.4rem 1.75rem', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+  const tdAssets = [
+    {
+      symbol: 'JPY / USD', name: 'Yen - Dollar',
+      price: jpy?.rate != null ? jpy.rate.toFixed(5) : null,
+      change: jpy?.change ?? null, color: '#ff6b9d', flashKey: 'jpy',
+      info: 'Données Twelve Data · JPY/USD spot · Mis à jour toutes les 5 min',
+      flipSymbol: 'USD / JPY', rawPrice: jpy?.rate ?? null,
+      market: { type: 'forex', tz: 'America/New_York' },
+    },
+    {
+      symbol: 'GBP / USD', name: 'Livre sterling - Dollar',
+      price: gbp?.price != null ? gbp.price.toFixed(4) : null,
+      change: gbp?.change ?? null, color: '#a78bfa', flashKey: 'gbp',
+      info: 'Données Twelve Data · GBP/USD spot · Cours réel depuis les marchés forex · Mis à jour toutes les 5 min',
+      flipSymbol: 'USD / GBP', rawPrice: gbp?.price ?? null,
+      market: { type: 'forex', tz: 'America/New_York' },
+    },
+  ]
 
-      {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <p style={{ ...labelSt, marginBottom: 0 }}>Marchés</p>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-          <span style={{ fontFamily: MONO, fontSize: '0.72rem', fontWeight: 600, color: `${NEON_CYAN}99`, minWidth: '2rem', textAlign: 'right' }}>
-            {countdown}s
-          </span>
-          <button
-            onClick={handleRefresh}
-            title="Rafraîchir"
-            style={{
-              fontFamily: FONT, fontSize: '0.85rem',
-              color: spinning ? TEXT_DIM : NEON_CYAN,
-              background: 'none',
-              border: `1px solid ${spinning ? BORDER : `${NEON_CYAN}44`}`,
-              borderRadius: '6px',
-              width: '26px', height: '22px',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              cursor: spinning ? 'default' : 'pointer',
-              transition: 'color 0.15s, border-color 0.15s',
-              lineHeight: 1,
-            }}
-            onMouseEnter={(e) => { if (!spinning) e.currentTarget.style.boxShadow = `0 0 8px ${NEON_CYAN}44` }}
-            onMouseLeave={(e) => { e.currentTarget.style.boxShadow = 'none' }}
-          >
-            ↻
-          </button>
+  function fmtTD(s) {
+    const m = Math.floor(s / 60)
+    const sec = String(s % 60).padStart(2, '0')
+    return `${m}:${sec}`
+  }
+
+  return (
+    <div style={{ padding: '1.4rem 1.75rem', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+
+      {/* ── Binance section ── */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <p style={{ ...labelSt, marginBottom: 0 }}>Binance</p>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <span style={{ fontFamily: MONO, fontSize: '0.62rem', color: TEXT_DIM }}>{countdownBinance}s</span>
+            <button
+              onClick={handleBinanceRefresh}
+              title="Rafraîchir"
+              style={{
+                fontFamily: FONT, fontSize: '0.85rem',
+                color: spinningBinance ? TEXT_DIM : NEON_CYAN,
+                background: 'none',
+                border: `1px solid ${spinningBinance ? BORDER : `${NEON_CYAN}44`}`,
+                borderRadius: '6px', width: '26px', height: '22px',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                cursor: spinningBinance ? 'default' : 'pointer',
+                transition: 'color 0.15s, border-color 0.15s', lineHeight: 1,
+              }}
+              onMouseEnter={(e) => { if (!spinningBinance) e.currentTarget.style.boxShadow = `0 0 8px ${NEON_CYAN}44` }}
+              onMouseLeave={(e) => { e.currentTarget.style.boxShadow = 'none' }}
+            >↻</button>
+          </div>
+        </div>
+        <AssetGrid assets={binanceAssets} loading={loadingBinance} flipped={flipped} flashMap={flashMap} onFlip={toggleFlip} fmtInverted={fmtInverted} getMarketStatus={getMarketStatus} />
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem', flexWrap: 'wrap' }}>
+          <UsdtPegIndicator peg={peg} />
+          <FearGreedWidget fearGreed={fearGreed} />
         </div>
       </div>
 
-      {/* Assets */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: '0.6rem' }}>
-        {assets.map((a) => {
-          const isFlipped    = !!flipped[a.symbol]
-          const displaySymbol = isFlipped ? a.flipSymbol : a.symbol
-          const displayPrice  = isFlipped ? fmtInverted(a.rawPrice) : (a.price ?? '—')
-          const displayChange = a.change != null ? (isFlipped ? -a.change : a.change) : null
-          const open          = a.market ? getMarketStatus(a.market) : null
-          return (
-            <div key={a.symbol} style={{
-              background: 'rgba(196,79,255,0.03)',
-              border: `1px solid ${BORDER}`,
-              borderLeft: `3px solid ${a.color}`,
-              borderRadius: '10px',
-              padding: '0.85rem 0.9rem',
-              display: 'flex', flexDirection: 'column', gap: '0.5rem',
-            }}>
-
-              {/* Symbol row */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-                <span style={{ fontFamily: FONT, fontSize: '0.66rem', fontWeight: 700, color: a.color, letterSpacing: '0.05em', flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  {displaySymbol}
-                </span>
-                <InfoTooltip text={a.info} />
-                {a.flipSymbol && (
-                  <button
-                    onClick={() => toggleFlip(a.symbol)}
-                    title="Inverser la paire"
-                    style={{
-                      fontFamily: FONT, fontSize: '0.65rem',
-                      color: isFlipped ? a.color : TEXT_DIM,
-                      background: 'none', border: 'none',
-                      cursor: 'pointer', padding: 0, lineHeight: 1,
-                      transition: 'color 0.15s', flexShrink: 0,
-                    }}
-                    onMouseEnter={(e) => (e.currentTarget.style.color = a.color)}
-                    onMouseLeave={(e) => (e.currentTarget.style.color = isFlipped ? a.color : TEXT_DIM)}
-                  >
-                    ⇄
-                  </button>
-                )}
-              </div>
-
-              {/* Price + change */}
-              {loading ? (
-                <div style={{ height: '1.8rem', background: 'rgba(196,79,255,0.07)', borderRadius: '5px' }} />
-              ) : (
-                <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.4rem', flexWrap: 'wrap' }}>
-                  <span style={{
-                    fontFamily: MONO, fontSize: '1.25rem', fontWeight: 700, color: TEXT, letterSpacing: '-0.02em',
-                    animation: flashMap[a.flashKey] ? `price${flashMap[a.flashKey] === 'up' ? 'Up' : 'Down'} 0.9s ease-out forwards` : 'none',
-                  }}>
-                    {displayPrice}
-                  </span>
-                  {displayChange != null && (
-                    <span style={{
-                      fontFamily: FONT, fontSize: '0.72rem', fontWeight: 700,
-                      color: displayChange >= 0 ? NEON_GREEN : NEON_PINK,
-                      textShadow: displayChange >= 0 ? `0 0 8px ${NEON_GREEN}66` : `0 0 8px ${NEON_PINK}66`,
-                    }}>
-                      {displayChange >= 0 ? '+' : ''}{displayChange.toFixed(2)}%
-                    </span>
-                  )}
-                </div>
-              )}
-
-              {/* Footer: name + status */}
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.3rem' }}>
-                <span style={{ fontFamily: FONT, fontSize: '0.62rem', color: TEXT_DIM }}>{a.name}</span>
-                {open !== null && (
-                  <span style={{
-                    fontFamily: FONT, fontSize: '0.52rem', fontWeight: 700, letterSpacing: '0.06em',
-                    color: open ? NEON_GREEN : TEXT_DIM,
-                    display: 'flex', alignItems: 'center', gap: '0.2rem', flexShrink: 0,
-                  }}>
-                    <span style={{
-                      width: '4px', height: '4px', borderRadius: '50%',
-                      background: open ? NEON_GREEN : 'rgba(196,79,255,0.3)',
-                      boxShadow: open ? `0 0 4px ${NEON_GREEN}` : 'none',
-                    }} />
-                    {open ? 'OUVERT' : 'FERMÉ'}
-                  </span>
-                )}
-              </div>
-
-            </div>
-          )
-        })}
+      {/* ── Twelve Data section ── */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <p style={{ ...labelSt, marginBottom: 0 }}>Twelve Data</p>
+          <span style={{ fontFamily: MONO, fontSize: '0.62rem', color: TEXT_DIM }}>↻ {fmtTD(countdownTD)}</span>
+        </div>
+        <AssetGrid assets={tdAssets} loading={loadingTD} flipped={flipped} flashMap={flashMap} onFlip={toggleFlip} fmtInverted={fmtInverted} getMarketStatus={getMarketStatus} />
       </div>
 
 
+
+    </div>
+  )
+}
+
+function UsdtPegIndicator({ peg }) {
+  if (peg == null) return null
+  const dev = Math.abs(peg - 1) * 100
+  const color = dev < 0.1 ? NEON_GREEN : dev < 0.5 ? '#f4c542' : NEON_PINK
+  const label = dev < 0.1 ? null : dev < 0.5 ? 'Légère déviation' : 'Dépeg détecté'
+  return (
+    <div style={{
+      display: 'inline-flex', alignItems: 'center', gap: '0.6rem',
+      padding: '0.45rem 0.9rem',
+      background: `${color}0d`,
+      border: `1px solid ${color}33`,
+      borderRadius: '99px',
+      alignSelf: 'flex-start',
+    }}>
+      <span style={{
+        width: '7px', height: '7px', borderRadius: '50%',
+        background: color, boxShadow: `0 0 6px ${color}`,
+        flexShrink: 0,
+      }} />
+      <span style={{ fontFamily: MONO, fontSize: '0.72rem', color, letterSpacing: '0.04em' }}>
+        USDT
+      </span>
+      <span style={{ fontFamily: MONO, fontSize: '0.78rem', fontWeight: 700, color, letterSpacing: '-0.01em' }}>
+        ${peg.toFixed(4)}
+      </span>
+      {label && (
+        <span style={{ fontFamily: FONT, fontSize: '0.68rem', color: `${color}99`, letterSpacing: '0.03em' }}>
+          {label}
+        </span>
+      )}
+    </div>
+  )
+}
+
+function FearGreedWidget({ fearGreed }) {
+  const getFGColor = (v) => {
+    if (v <= 24) return '#ff2d78'
+    if (v <= 44) return '#ff7043'
+    if (v <= 54) return '#f4c542'
+    if (v <= 74) return '#7ec857'
+    return '#00ff88'
+  }
+  if (fearGreed == null) return null
+
+  const { value, label } = fearGreed
+  const color  = getFGColor(value)
+  const arcDeg = (value / 100) * 180
+
+  return (
+    <div style={{
+      display: 'inline-flex', alignItems: 'center', gap: '0.6rem',
+      padding: '0.45rem 0.9rem',
+      background: `${color}0d`,
+      border: `1px solid ${color}33`,
+      borderRadius: '99px',
+      alignSelf: 'flex-start',
+    }}>
+      {/* Mini gauge */}
+      <svg width="44" height="24" viewBox="0 0 72 38" style={{ overflow: 'visible', flexShrink: 0 }}>
+        <path d="M 4 36 A 32 32 0 0 1 68 36" fill="none" stroke="rgba(196,79,255,0.2)" strokeWidth="6" strokeLinecap="round" />
+        <path
+          d="M 4 36 A 32 32 0 0 1 68 36"
+          fill="none" stroke={color} strokeWidth="6" strokeLinecap="round"
+          strokeDasharray={`${arcDeg * (100 / 180)} 200`}
+          style={{ filter: `drop-shadow(0 0 3px ${color}88)`, transition: 'stroke-dasharray 0.8s ease' }}
+        />
+        {(() => {
+          const rad = ((arcDeg - 180) * Math.PI) / 180
+          return <circle cx={36 + 32 * Math.cos(rad)} cy={36 + 32 * Math.sin(rad)} r="5" fill={color} style={{ filter: `drop-shadow(0 0 4px ${color})` }} />
+        })()}
+      </svg>
+      {/* Score */}
+      <span style={{ fontFamily: MONO, fontSize: '0.85rem', fontWeight: 800, color, letterSpacing: '-0.01em' }}>
+        {value}
+      </span>
+      {/* Label */}
+      <span style={{ fontFamily: FONT, fontSize: '0.72rem', fontWeight: 600, color: `${color}cc`, letterSpacing: '0.03em' }}>
+        {label}
+      </span>
+      <InfoTooltip text="L'indice Fear & Greed mesure le sentiment global du marché crypto sur une échelle de 0 à 100. En dessous de 25 : peur extrême — les investisseurs paniquent, ce qui peut indiquer une opportunité d'achat. Au-dessus de 75 : avidité extrême — le marché est euphorique, risque de correction élevé. Entre les deux : sentiment neutre à positif. À utiliser comme signal de contexte, pas comme signal d'entrée seul." />
+    </div>
+  )
+}
+
+function fmtHL(v) {
+  if (v == null || isNaN(v)) return '—'
+  if (v >= 10000) return v.toLocaleString('en-US', { maximumFractionDigits: 0 })
+  if (v >= 100)   return v.toFixed(2)
+  if (v >= 1)     return v.toFixed(4)
+  return v.toFixed(6)
+}
+
+function fmtVol(v) {
+  if (v == null || isNaN(v) || v === 0) return null
+  if (v >= 1e9) return `$${(v / 1e9).toFixed(1)}B`
+  if (v >= 1e6) return `$${(v / 1e6).toFixed(0)}M`
+  return `$${v.toFixed(0)}`
+}
+
+function AssetGrid({ assets, loading, flipped, flashMap, onFlip, fmtInverted, getMarketStatus }) {
+  return (
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '0.7rem' }}>
+      {assets.map((a) => {
+        const isFlipped     = !!flipped[a.symbol]
+        const displaySymbol = isFlipped ? a.flipSymbol : a.symbol
+        const displayPrice  = isFlipped ? fmtInverted(a.rawPrice) : (a.price ?? '—')
+        const displayChange = a.change != null ? (isFlipped ? -a.change : a.change) : null
+        const open          = a.market ? getMarketStatus(a.market) : null
+        const tintColor     = displayChange == null ? null : displayChange >= 0 ? NEON_GREEN : NEON_PINK
+        const hasBar        = a.high != null && a.low != null && a.rawNum != null && a.high > a.low
+        const barPct        = hasBar ? Math.min(100, Math.max(0, (a.rawNum - a.low) / (a.high - a.low) * 100)) : 0
+        const volFmt        = fmtVol(a.volume)
+        return (
+          <div key={a.symbol} style={{
+            background: tintColor ? `${tintColor}08` : 'rgba(196,79,255,0.03)',
+            border: `1px solid ${tintColor ? `${tintColor}22` : BORDER}`,
+            borderLeft: `3px solid ${a.color}`,
+            borderRadius: '10px',
+            padding: '1rem 1.1rem',
+            display: 'flex', flexDirection: 'column', gap: '0.55rem',
+            transition: 'background 0.4s, border-color 0.4s',
+          }}>
+            {/* Header row */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+              <span style={{ fontFamily: FONT, fontSize: '0.66rem', fontWeight: 700, color: a.color, letterSpacing: '0.05em', flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {displaySymbol}
+              </span>
+              <InfoTooltip text={a.info} />
+              {a.flipSymbol && (
+                <button
+                  onClick={() => onFlip(a.symbol)}
+                  title="Inverser la paire"
+                  style={{
+                    fontFamily: FONT, fontSize: '0.65rem',
+                    color: isFlipped ? a.color : TEXT_DIM,
+                    background: 'none', border: 'none',
+                    cursor: 'pointer', padding: 0, lineHeight: 1,
+                    transition: 'color 0.15s', flexShrink: 0,
+                  }}
+                  onMouseEnter={(e) => (e.currentTarget.style.color = a.color)}
+                  onMouseLeave={(e) => (e.currentTarget.style.color = isFlipped ? a.color : TEXT_DIM)}
+                >⇄</button>
+              )}
+            </div>
+
+            {/* Price + change */}
+            {loading ? (
+              <div style={{ height: '2rem', background: 'rgba(196,79,255,0.07)', borderRadius: '5px' }} />
+            ) : (
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.4rem', flexWrap: 'wrap' }}>
+                <span style={{
+                  fontFamily: MONO, fontSize: '1.35rem', fontWeight: 700, color: TEXT, letterSpacing: '-0.02em',
+                  animation: flashMap[a.flashKey] ? `price${flashMap[a.flashKey] === 'up' ? 'Up' : 'Down'} 0.9s ease-out forwards` : 'none',
+                }}>
+                  {displayPrice}
+                </span>
+                {displayChange != null && (
+                  <span style={{
+                    fontFamily: FONT, fontSize: '0.75rem', fontWeight: 700,
+                    color: displayChange >= 0 ? NEON_GREEN : NEON_PINK,
+                    textShadow: displayChange >= 0 ? `0 0 8px ${NEON_GREEN}66` : `0 0 8px ${NEON_PINK}66`,
+                  }}>
+                    {displayChange >= 0 ? '+' : ''}{displayChange.toFixed(2)}%
+                  </span>
+                )}
+              </div>
+            )}
+
+            {/* High/Low bar */}
+            {!loading && hasBar && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                <div style={{ position: 'relative', height: '3px', background: 'rgba(196,79,255,0.15)', borderRadius: '99px', overflow: 'hidden' }}>
+                  <div style={{
+                    position: 'absolute', left: 0,
+                    width: `${barPct}%`, height: '100%',
+                    background: `linear-gradient(90deg, ${a.color}55, ${a.color})`,
+                    borderRadius: '99px',
+                    transition: 'width 0.4s ease',
+                  }} />
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <span style={{ fontFamily: MONO, fontSize: '0.55rem', color: TEXT_DIM }}>L {fmtHL(a.low)}</span>
+                  <span style={{ fontFamily: MONO, fontSize: '0.55rem', color: TEXT_DIM }}>H {fmtHL(a.high)}</span>
+                </div>
+              </div>
+            )}
+
+            {/* Name + market status + volume */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.3rem' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.15rem', minWidth: 0 }}>
+                <span style={{ fontFamily: FONT, fontSize: '0.63rem', color: TEXT_DIM }}>{a.name}</span>
+                {!loading && volFmt && (
+                  <span style={{ fontFamily: MONO, fontSize: '0.55rem', color: 'rgba(245,230,255,0.25)', letterSpacing: '0.02em' }}>
+                    Vol {volFmt}
+                  </span>
+                )}
+              </div>
+              {open !== null && (
+                <span style={{
+                  fontFamily: FONT, fontSize: '0.52rem', fontWeight: 700, letterSpacing: '0.06em',
+                  color: open ? NEON_GREEN : TEXT_DIM,
+                  display: 'flex', alignItems: 'center', gap: '0.2rem', flexShrink: 0,
+                }}>
+                  <span style={{
+                    width: '4px', height: '4px', borderRadius: '50%',
+                    background: open ? NEON_GREEN : 'rgba(196,79,255,0.3)',
+                    boxShadow: open ? `0 0 4px ${NEON_GREEN}` : 'none',
+                  }} />
+                  {open ? 'OUVERT' : 'FERMÉ'}
+                </span>
+              )}
+            </div>
+          </div>
+        )
+      })}
     </div>
   )
 }

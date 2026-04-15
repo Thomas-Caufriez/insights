@@ -7,7 +7,13 @@
       "WebSearch",
       "Bash(wc -l /c/Users/thcau/Documents/GitHub/insights/src/**/*.jsx)",
       "Bash(wc:*)",
-      "Bash(grep -l \"export const\" /c/Users/thcau/Documents/GitHub/insights/src/**/*.js)"
+      "Bash(grep -l \"export const\" /c/Users/thcau/Documents/GitHub/insights/src/**/*.js)",
+      "WebFetch(domain:ticktrader.fxopen.com)",
+      "WebFetch(domain:open-api.capital.com)",
+      "WebFetch(domain:capital.com)",
+      "WebFetch(domain:indices-api.com)",
+      "Bash(curl:*)",
+      "WebFetch(domain:site.financialmodelingprep.com)"
     ]
   }
 }
