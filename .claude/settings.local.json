@@ -13,7 +13,12 @@
       "WebFetch(domain:capital.com)",
       "WebFetch(domain:indices-api.com)",
       "Bash(curl:*)",
-      "WebFetch(domain:site.financialmodelingprep.com)"
+      "WebFetch(domain:site.financialmodelingprep.com)",
+      "Bash(git -C /c/Users/thcau/Documents/GitHub/insights config --list)",
+      "Bash(xxd /c/Users/thcau/Documents/GitHub/insights/.githooks/post-commit)",
+      "Bash(git -C /c/Users/thcau/Documents/GitHub/insights add .gitattributes .githooks/post-commit .githooks/pre-push)",
+      "Bash(git -C /c/Users/thcau/Documents/GitHub/insights status)",
+      "Bash(git:*)"
     ]
   }
 }
