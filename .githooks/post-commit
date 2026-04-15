@@ -1,6 +1,4 @@
 #!/bin/bash
-echo "hook ran $(date)" >> "$GIT_DIR/../hook_debug.log"
-which node >> "$GIT_DIR/../hook_debug.log" 2>&1
 WEBHOOK="https://discord.com/api/webhooks/1484674443455369416/8dKEBWg0uB2Ay1eQmB8QPfP4Bi5X7GqEMa9pNBtVZHfmuYA58d_CAW3ynlehYQP1-yXd"
 USER=$(whoami)
 MSG=$(git log -1 --pretty=%s)
