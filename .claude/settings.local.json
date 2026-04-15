@@ -18,7 +18,9 @@
       "Bash(xxd /c/Users/thcau/Documents/GitHub/insights/.githooks/post-commit)",
       "Bash(git -C /c/Users/thcau/Documents/GitHub/insights add .gitattributes .githooks/post-commit .githooks/pre-push)",
       "Bash(git -C /c/Users/thcau/Documents/GitHub/insights status)",
-      "Bash(git:*)"
+      "Bash(git:*)",
+      "Bash(printf '#!/bin/bash\\\\necho \"git hook ran\" > /c/Users/thcau/Documents/GitHub/insights/hook_test.txt\\\\n')",
+      "Bash(chmod +x /c/Users/thcau/Documents/GitHub/insights/.git/hooks/post-commit)"
     ]
   }
 }
