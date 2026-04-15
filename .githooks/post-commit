@@ -5,3 +5,8 @@ MSG=$(git log -1 --pretty=%s)
 node -e "process.stdout.write(JSON.stringify({content: '💡 **$USER** nom du classic : — *' + process.argv[1] + '*'}))" "$MSG" \
   | curl -s -X POST "$WEBHOOK" -H "Content-Type: application/json" -d @- \
   2>/dev/null || true
+
+# debug
+echo "PATH=$PATH" >> /tmp/hook_debug.log
+which node >> /tmp/hook_debug.log 2>&1
+which curl >> /tmp/hook_debug.log 2>&1
