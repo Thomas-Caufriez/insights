@@ -180,16 +180,18 @@ export default function TradingDashboard({ onSelectCategory, onHome, isMobile })
         }}>
           {/* Row 1 — market data (prominent) */}
           <div style={{ background: CARD, gridColumn: isNarrow ? '1' : 'span 2' }}><LivePricesWidget /></div>
-          <div style={{ background: CARD }}><SessionsWidget /></div>
+          <div style={{ background: CARD, display: 'flex', flexDirection: 'column' }}>
+            <RulesWidget compact />
+            <div style={{ height: '1px', background: BORDER, flexShrink: 0 }} />
+            <SessionsWidget />
+          </div>
 
-          {/* Row 2 — secondary info */}
-          <div style={{ background: CARD }}><RulesWidget /></div>
-          <div style={{ background: CARD }}><NewsletterWidget /></div>
+          {/* Row 2 — calendar full width */}
+          <div style={{ background: CARD, gridColumn: isNarrow ? '1' : 'span 3' }}><CalendarWidget /></div>
+
+          {/* Row 3 — calculators */}
           <div style={{ background: CARD }}><BasicCalcWidget /></div>
 
-          {/* Row 3 — calculators (less prominent) */}
-          <div style={{ background: CARD }}><PositionCalcWidget /></div>
-          <div style={{ background: CARD, gridColumn: isNarrow ? '1' : 'span 2' }}><RRCalcWidget /></div>
         </div>
 
       </div>
@@ -214,7 +216,7 @@ function LivePricesWidget() {
   const [eth,  setEth]  = useState(null)
   const [spy,  setSpy]  = useState(null)
   const [fearGreed,      setFearGreed]        = useState(null)
-  const [flipped,         setFlipped]         = useState({})
+  const [flipped,         setFlipped]         = useState({ 'JPY / USD': true })
   const [flashMap,        setFlashMap]        = useState({})
   const [loadingBinance,  setLoadingBinance]  = useState(true)
   const [loadingTD,       setLoadingTD]       = useState(true)
@@ -318,12 +320,9 @@ function LivePricesWidget() {
           const change = parseFloat(item.percent_change)
           return { price: isNaN(price) ? null : price, change: isNaN(change) ? null : change }
         }
-        console.log('TwelveData response keys:', JSON.stringify(Object.keys(d)))
-        console.log('IWDA:LSE data:', JSON.stringify(d['IWDA:LSE']))
-        const jpy  = parseTD('JPY/USD');  if (jpy?.price  != null) { setJpy({ rate: jpy.price, change: jpy.change }); triggerFlash('jpy', jpy.price) }
-        const gbp  = parseTD('GBP/USD');  if (gbp?.price  != null) { setGbp({ price: gbp.price, change: gbp.change }); triggerFlash('gbp', gbp.price) }
-        const spy  = parseTD('SPY');      if (spy?.price  != null) { setSpy({ price: spy.price, change: spy.change }); triggerFlash('spy', spy.price) }
-        const iwda = parseTD('IWDA:LSE'); if (iwda?.price != null) { setIwda({ price: iwda.price, change: iwda.change }); triggerFlash('iwda', iwda.price) }
+        const jpy  = parseTD('JPY/USD'); if (jpy?.price  != null) { setJpy({ rate: jpy.price, change: jpy.change }); triggerFlash('jpy', jpy.price) }
+        const gbp  = parseTD('GBP/USD'); if (gbp?.price  != null) { setGbp({ price: gbp.price, change: gbp.change }); triggerFlash('gbp', gbp.price) }
+        const spy  = parseTD('SPY');     if (spy?.price  != null) { setSpy({ price: spy.price, change: spy.change }); triggerFlash('spy', spy.price) }
       }
     } finally {
       setLoadingTD(false)
@@ -479,13 +478,6 @@ function LivePricesWidget() {
       change: spy?.change ?? null, color: '#34d399', flashKey: 'spy',
       info: 'Données Twelve Data · SPY NYSE · S&P 500 ETF · Mis à jour toutes les 5 min',
       market: { type: 'stock', tz: 'America/New_York', open: 9.5, close: 16 },
-    },
-    {
-      symbol: 'IWDA', name: 'iShares MSCI World ETF',
-      price: iwda?.price != null ? `$${iwda.price.toFixed(2)}` : null,
-      change: iwda?.change ?? null, color: '#60a5fa', flashKey: 'iwda',
-      info: 'Données Twelve Data · IWDA LSE · MSCI World UCITS ETF · Mis à jour toutes les 5 min',
-      market: { type: 'stock', tz: 'Europe/London', open: 8, close: 16.5 },
     },
   ]
 
@@ -765,6 +757,34 @@ function AssetGrid({ assets, loading, flipped, flashMap, onFlip, fmtInverted, ge
 
 // ─── Sessions ─────────────────────────────────────────────────────────────────
 
+function getSessionProgress(o, c) {
+  const h = new Date().getUTCHours() + new Date().getUTCMinutes() / 60
+  const duration = o > c ? (24 - o) + c : c - o
+  const elapsed  = o > c ? (h >= o ? h - o : (24 - o) + h) : h - o
+  return Math.min(100, Math.max(0, (elapsed / duration) * 100))
+}
+
+function fmtCountdown(hours) {
+  const h = Math.floor(Math.abs(hours))
+  const m = Math.round((Math.abs(hours) - h) * 60)
+  if (h === 0) return `${m}min`
+  return m > 0 ? `${h}h${m}min` : `${h}h`
+}
+
+function getTimeUntilClose(c) {
+  const h = new Date().getUTCHours() + new Date().getUTCMinutes() / 60
+  let r = c - h
+  if (r < 0) r += 24
+  return fmtCountdown(r)
+}
+
+function getTimeUntilOpen(o) {
+  const h = new Date().getUTCHours() + new Date().getUTCMinutes() / 60
+  let r = o - h
+  if (r < 0) r += 24
+  return fmtCountdown(r)
+}
+
 function SessionsWidget() {
   const [, setTick] = useState(0)
   useEffect(() => {
@@ -773,27 +793,49 @@ function SessionsWidget() {
   }, [])
 
   return (
-    <div style={{ padding: '1.4rem 1.5rem' }}>
-      <p style={labelSt}>Statut des marchés</p>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.7rem', marginTop: '0.5rem' }}>
+    <div style={{ padding: '1rem 1.5rem', flex: 1 }}>
+      <p style={labelSt}>Marchés</p>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
         {SESSIONS.map((s) => {
-          const open = isSessionOpen(s.openUTC, s.closeUTC)
+          const open     = isSessionOpen(s.openUTC, s.closeUTC)
+          const progress = open ? getSessionProgress(s.openUTC, s.closeUTC) : 0
+          const label    = open ? `ferme dans ${getTimeUntilClose(s.closeUTC)}` : `ouvre dans ${getTimeUntilOpen(s.openUTC)}`
+
           return (
-            <div key={s.name} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.55rem' }}>
-                <div style={{
-                  width: '6px', height: '6px', borderRadius: '50%', flexShrink: 0,
-                  background: open ? NEON_GREEN : 'rgba(196,79,255,0.2)',
-                  boxShadow: open ? `0 0 6px ${NEON_GREEN}, 0 0 14px ${NEON_GREEN}55` : 'none',
-                  transition: 'all 0.4s',
-                }} />
-                <span style={{ fontFamily: FONT, fontSize: '0.82rem', fontWeight: 600, color: open ? TEXT : TEXT_DIM }}>
-                  {s.name}
+            <div key={s.name}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.3rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <div style={{
+                    width: '6px', height: '6px', borderRadius: '50%', flexShrink: 0,
+                    background: open ? NEON_GREEN : 'rgba(196,79,255,0.2)',
+                    boxShadow: open ? `0 0 6px ${NEON_GREEN}, 0 0 14px ${NEON_GREEN}55` : 'none',
+                    transition: 'all 0.4s',
+                  }} />
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.05rem' }}>
+                    <span style={{ fontFamily: FONT, fontSize: '0.78rem', fontWeight: 600, color: open ? TEXT : TEXT_DIM }}>
+                      {s.name}
+                    </span>
+                    <span style={{ fontFamily: FONT, fontSize: '0.58rem', color: open ? `${NEON_GREEN}99` : TEXT_DIM }}>
+                      {label}
+                    </span>
+                  </div>
+                </div>
+                <span style={{ fontFamily: MONO, fontSize: '0.7rem', color: open ? TEXT : TEXT_DIM }}>
+                  {getLocalTime(s.timezone)}
                 </span>
               </div>
-              <span style={{ fontFamily: MONO, fontSize: '0.75rem', color: open ? TEXT : TEXT_DIM }}>
-                {getLocalTime(s.timezone)}
-              </span>
+              <div style={{ height: '2px', background: 'rgba(196,79,255,0.1)', borderRadius: '99px', overflow: 'hidden' }}>
+                {open && (
+                  <div style={{
+                    height: '100%',
+                    width: `${progress}%`,
+                    background: `linear-gradient(90deg, ${NEON_GREEN}55, ${NEON_GREEN})`,
+                    borderRadius: '99px',
+                    boxShadow: `0 0 6px ${NEON_GREEN}66`,
+                    transition: 'width 1s ease',
+                  }} />
+                )}
+              </div>
             </div>
           )
         })}
@@ -819,33 +861,9 @@ function RulesWidget() {
   }, [])
 
   return (
-    <div style={{ padding: '1rem 1.25rem', display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
-      <p style={{ ...labelSt, marginBottom: 0 }}>Règle du moment</p>
-      <p style={{
-        fontFamily: FONT, fontSize: '0.78rem', fontWeight: 500,
-        color: TEXT_DIM, lineHeight: 1.55, fontStyle: 'italic',
-        opacity: visible ? 1 : 0,
-        transition: 'opacity 0.3s ease',
-        margin: 0,
-      }}>
-        "{RULES[idx]}"
-      </p>
+    <div style={{ padding: '0.65rem 1.25rem', display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <div style={{ display: 'flex', gap: '0.25rem', alignItems: 'center' }}>
-          {RULES.map((_, i) => (
-            <div
-              key={i}
-              onClick={() => advance(i)}
-              style={{
-                width: i === idx ? '10px' : '3px', height: '3px',
-                borderRadius: '99px',
-                background: i === idx ? NEON_PURP : `${NEON_PURP}33`,
-                boxShadow: i === idx ? `0 0 4px ${NEON_PURP}` : 'none',
-                transition: 'all 0.4s', cursor: 'pointer',
-              }}
-            />
-          ))}
-        </div>
+        <p style={{ ...labelSt, marginBottom: 0, fontSize: '0.6rem', opacity: 0.6 }}>Astuce</p>
         <button
           onClick={() => advance()}
           style={{
@@ -858,29 +876,144 @@ function RulesWidget() {
           → suiv.
         </button>
       </div>
+      <p style={{
+        fontFamily: FONT, fontSize: '0.73rem', fontWeight: 500,
+        color: TEXT, lineHeight: 1.5, fontStyle: 'italic',
+        opacity: visible ? 1 : 0,
+        transition: 'opacity 0.3s ease',
+        margin: 0,
+      }}>
+        "{RULES[idx]}"
+      </p>
     </div>
   )
 }
 
 // ─── Newsletter placeholder ───────────────────────────────────────────────────
 
-function NewsletterWidget() {
+const GIST_URL = 'https://gist.githubusercontent.com/Thomas-Caufriez/2074909e9bd9b4bc27ab9884059c2d1b/raw/ff_calendar.json'
+
+const IMPACT_COLOR = { High: NEON_PINK, Medium: '#f4c542', Low: TEXT_DIM }
+const CURRENCY_COLOR = {
+  USD: '#60a5fa', EUR: NEON_CYAN, GBP: '#a78bfa',
+  JPY: '#ff6b9d', CHF: '#34d399', CAD: '#fb923c', AUD: '#fbbf24', NZD: '#4ade80',
+}
+
+function CalendarWidget() {
+  const [events,  setEvents]  = useState([])
+  const [loading, setLoading] = useState(true)
+  const [filter,  setFilter]  = useState('All')
+
+  useEffect(() => {
+    async function load() {
+      try {
+        const res = await fetch(GIST_URL)
+        if (!res.ok) return
+        const data = await res.json()
+        const now = new Date()
+        const todayStr = now.toISOString().slice(0, 10)
+        const todayEvents = data
+          .filter(e => e.date.slice(0, 10) === todayStr)
+          .sort((a, b) => new Date(a.date) - new Date(b.date))
+        setEvents(todayEvents)
+      } catch {}
+      finally { setLoading(false) }
+    }
+    load()
+  }, [])
+
+  const currencies = ['All', ...Array.from(new Set(events.map(e => e.country))).sort()]
+  const visible = filter === 'All' ? events : events.filter(e => e.country === filter)
+
+  function fmtTime(dateStr) {
+    return new Date(dateStr).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
+  }
+
+  function isReleased(e) { return e.actual && e.actual !== '' }
+  function isPast(e) { return new Date(e.date) < new Date() }
+
   return (
-    <div style={{
-      padding: '1.4rem 1.5rem',
-      display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center',
-      minHeight: '100px', gap: '0.65rem',
-    }}>
-      <svg width="30" height="24" viewBox="0 0 30 24" fill="none" style={{ opacity: 0.3 }}>
-        <rect x="1" y="1" width="28" height="22" rx="3" stroke={NEON_CYAN} strokeWidth="1.5" />
-        <polyline points="1,4 15,14 29,4" stroke={NEON_CYAN} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-      </svg>
-      <p style={{ fontFamily: FONT, fontSize: '0.78rem', fontWeight: 700, color: TEXT_DIM, textAlign: 'center' }}>
-        Newsletter
-      </p>
-      <p style={{ fontFamily: FONT, fontSize: '0.65rem', color: TEXT_DIM, textAlign: 'center', opacity: 0.6 }}>
-        Bientôt disponible
-      </p>
+    <div style={{ padding: '1.25rem 1.5rem', display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+
+      {/* Header */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <p style={labelSt}>Calendrier économique</p>
+        <span style={{ fontFamily: MONO, fontSize: '0.6rem', color: TEXT_DIM }}>
+          {new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}
+        </span>
+      </div>
+
+      {/* Currency filter */}
+      <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
+        {currencies.map(c => (
+          <button key={c} onClick={() => setFilter(c)} style={{
+            fontFamily: FONT, fontSize: '0.62rem', fontWeight: 600,
+            color: filter === c ? (CURRENCY_COLOR[c] || TEXT) : TEXT_DIM,
+            background: filter === c ? `${CURRENCY_COLOR[c] || NEON_CYAN}12` : 'transparent',
+            border: `1px solid ${filter === c ? (CURRENCY_COLOR[c] || NEON_CYAN) + '55' : BORDER}`,
+            borderRadius: '99px', padding: '0.2rem 0.6rem',
+            cursor: 'pointer', transition: 'all 0.15s',
+          }}>{c}</button>
+        ))}
+      </div>
+
+      {/* Events */}
+      {loading ? (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+          {[1,2,3].map(i => <div key={i} style={{ height: '2.5rem', background: 'rgba(196,79,255,0.06)', borderRadius: '8px' }} />)}
+        </div>
+      ) : visible.length === 0 ? (
+        <p style={{ fontFamily: FONT, fontSize: '0.72rem', color: TEXT_DIM, fontStyle: 'italic' }}>
+          Aucun événement aujourd'hui.
+        </p>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+          {visible.map((e, i) => {
+            const released  = isReleased(e)
+            const past      = isPast(e)
+            const impactCol = IMPACT_COLOR[e.impact] || TEXT_DIM
+            const currCol   = CURRENCY_COLOR[e.country] || TEXT_DIM
+            return (
+              <div key={i} style={{
+                display: 'grid', gridTemplateColumns: '3rem 2.5rem 1fr auto',
+                alignItems: 'center', gap: '0.65rem',
+                padding: '0.5rem 0.75rem',
+                background: past ? 'rgba(196,79,255,0.03)' : `${impactCol}08`,
+                border: `1px solid ${past ? BORDER : impactCol + '22'}`,
+                borderLeft: `3px solid ${impactCol}`,
+                borderRadius: '8px',
+                opacity: past && !released ? 0.45 : 1,
+                transition: 'opacity 0.3s',
+              }}>
+                {/* Time */}
+                <span style={{ fontFamily: MONO, fontSize: '0.65rem', color: past ? TEXT_DIM : TEXT }}>
+                  {fmtTime(e.date)}
+                </span>
+                {/* Currency */}
+                <span style={{ fontFamily: MONO, fontSize: '0.65rem', fontWeight: 700, color: currCol }}>
+                  {e.country}
+                </span>
+                {/* Title */}
+                <span style={{ fontFamily: FONT, fontSize: '0.7rem', fontWeight: 500, color: past ? TEXT_DIM : TEXT, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {e.title}
+                </span>
+                {/* Values */}
+                <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexShrink: 0 }}>
+                  {released ? (
+                    <span style={{ fontFamily: MONO, fontSize: '0.68rem', fontWeight: 700, color: impactCol }}>
+                      {e.actual}
+                    </span>
+                  ) : e.forecast ? (
+                    <span style={{ fontFamily: MONO, fontSize: '0.62rem', color: TEXT_DIM }}>
+                      prev. {e.forecast}
+                    </span>
+                  ) : null}
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      )}
     </div>
   )
 }
