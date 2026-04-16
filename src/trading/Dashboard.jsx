@@ -898,11 +898,17 @@ const CURRENCY_COLOR = {
   USD: '#60a5fa', EUR: NEON_CYAN, GBP: '#a78bfa',
   JPY: '#ff6b9d', CHF: '#34d399', CAD: '#fb923c', AUD: '#fbbf24', NZD: '#4ade80',
 }
+const CURRENCY_NAME = {
+  USD: 'Dollar américain', EUR: 'Euro', GBP: 'Livre sterling',
+  JPY: 'Yen japonais', CHF: 'Franc suisse', CAD: 'Dollar canadien',
+  AUD: 'Dollar australien', NZD: 'Dollar néo-zélandais',
+}
 
 function CalendarWidget() {
-  const [events,  setEvents]  = useState([])
-  const [loading, setLoading] = useState(true)
-  const [filter,  setFilter]  = useState('All')
+  const [events,   setEvents]   = useState([])
+  const [loading,  setLoading]  = useState(true)
+  const [expanded, setExpanded] = useState(false)
+  const [tab,      setTab]      = useState('upcoming')
 
   useEffect(() => {
     async function load() {
@@ -912,8 +918,9 @@ function CalendarWidget() {
         const data = await res.json()
         const now = new Date()
         const todayStr = now.toISOString().slice(0, 10)
+        const cutoff = new Date(now.getTime() - 3 * 60 * 60 * 1000)
         const todayEvents = data
-          .filter(e => e.date.slice(0, 10) === todayStr)
+          .filter(e => e.date.slice(0, 10) === todayStr && new Date(e.date) >= cutoff)
           .sort((a, b) => new Date(a.date) - new Date(b.date))
         setEvents(todayEvents)
       } catch {}
@@ -922,15 +929,16 @@ function CalendarWidget() {
     load()
   }, [])
 
-  const currencies = ['All', ...Array.from(new Set(events.map(e => e.country))).sort()]
-  const visible = filter === 'All' ? events : events.filter(e => e.country === filter)
-
   function fmtTime(dateStr) {
     return new Date(dateStr).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
   }
-
   function isReleased(e) { return e.actual && e.actual !== '' }
-  function isPast(e) { return new Date(e.date) < new Date() }
+  function isPast(e)     { return new Date(e.date) < new Date() }
+
+  const upcoming = events.filter(e => !isPast(e))
+  const past     = events.filter(e => isPast(e)).reverse()
+  const preview  = upcoming.slice(0, 5)
+  const tabList  = tab === 'upcoming' ? upcoming : tab === 'past' ? past : events
 
   return (
     <div style={{ padding: '1.25rem 1.5rem', display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
@@ -938,82 +946,119 @@ function CalendarWidget() {
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <p style={labelSt}>Calendrier économique</p>
-        <span style={{ fontFamily: MONO, fontSize: '0.6rem', color: TEXT_DIM }}>
-          {new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}
-        </span>
-      </div>
-
-      {/* Currency filter */}
-      <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
-        {currencies.map(c => (
-          <button key={c} onClick={() => setFilter(c)} style={{
-            fontFamily: FONT, fontSize: '0.62rem', fontWeight: 600,
-            color: filter === c ? (CURRENCY_COLOR[c] || TEXT) : TEXT_DIM,
-            background: filter === c ? `${CURRENCY_COLOR[c] || NEON_CYAN}12` : 'transparent',
-            border: `1px solid ${filter === c ? (CURRENCY_COLOR[c] || NEON_CYAN) + '55' : BORDER}`,
-            borderRadius: '99px', padding: '0.2rem 0.6rem',
-            cursor: 'pointer', transition: 'all 0.15s',
-          }}>{c}</button>
-        ))}
-      </div>
-
-      {/* Events */}
-      {loading ? (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-          {[1,2,3].map(i => <div key={i} style={{ height: '2.5rem', background: 'rgba(196,79,255,0.06)', borderRadius: '8px' }} />)}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+          {[['High', NEON_PINK, 'Fort'], ['Medium', '#f4c542', 'Modéré'], ['Low', TEXT_DIM, 'Faible']].map(([label, color, desc]) => (
+            <div key={label} style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+              <div style={{ width: '7px', height: '7px', borderRadius: '2px', background: color, boxShadow: label === 'High' ? `0 0 5px ${color}88` : 'none' }} />
+              <span style={{ fontFamily: FONT, fontSize: '0.58rem', color: TEXT_DIM }}>{desc}</span>
+            </div>
+          ))}
         </div>
-      ) : visible.length === 0 ? (
-        <p style={{ fontFamily: FONT, fontSize: '0.72rem', color: TEXT_DIM, fontStyle: 'italic' }}>
-          Aucun événement aujourd'hui.
-        </p>
-      ) : (
+      </div>
+
+      {/* Collapsed — next 5 (masqué si expanded) */}
+      {!expanded && loading ? (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-          {visible.map((e, i) => {
-            const released  = isReleased(e)
-            const past      = isPast(e)
-            const impactCol = IMPACT_COLOR[e.impact] || TEXT_DIM
-            const currCol   = CURRENCY_COLOR[e.country] || TEXT_DIM
-            return (
-              <div key={i} style={{
-                display: 'grid', gridTemplateColumns: '3rem 2.5rem 1fr auto',
-                alignItems: 'center', gap: '0.65rem',
-                padding: '0.5rem 0.75rem',
-                background: past ? 'rgba(196,79,255,0.03)' : `${impactCol}08`,
-                border: `1px solid ${past ? BORDER : impactCol + '22'}`,
-                borderLeft: `3px solid ${impactCol}`,
-                borderRadius: '8px',
-                opacity: past && !released ? 0.45 : 1,
-                transition: 'opacity 0.3s',
-              }}>
-                {/* Time */}
-                <span style={{ fontFamily: MONO, fontSize: '0.65rem', color: past ? TEXT_DIM : TEXT }}>
-                  {fmtTime(e.date)}
-                </span>
-                {/* Currency */}
-                <span style={{ fontFamily: MONO, fontSize: '0.65rem', fontWeight: 700, color: currCol }}>
-                  {e.country}
-                </span>
-                {/* Title */}
-                <span style={{ fontFamily: FONT, fontSize: '0.7rem', fontWeight: 500, color: past ? TEXT_DIM : TEXT, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  {e.title}
-                </span>
-                {/* Values */}
-                <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexShrink: 0 }}>
-                  {released ? (
-                    <span style={{ fontFamily: MONO, fontSize: '0.68rem', fontWeight: 700, color: impactCol }}>
-                      {e.actual}
-                    </span>
-                  ) : e.forecast ? (
-                    <span style={{ fontFamily: MONO, fontSize: '0.62rem', color: TEXT_DIM }}>
-                      prev. {e.forecast}
-                    </span>
-                  ) : null}
-                </div>
-              </div>
-            )
-          })}
+          {[1,2,3].map(i => <div key={i} style={{ height: '2rem', background: 'rgba(196,79,255,0.06)', borderRadius: '6px' }} />)}
+        </div>
+      ) : !expanded && preview.length === 0 ? (
+        <p style={{ fontFamily: FONT, fontSize: '0.72rem', color: TEXT_DIM, fontStyle: 'italic' }}>
+          Aucun événement à venir aujourd'hui.
+        </p>
+      ) : !expanded ? (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+          {preview.map((e, i) => <EventRow key={i} e={e} fmtTime={fmtTime} isReleased={isReleased} isPast={isPast} />)}
+        </div>
+      ) : null}
+
+      {/* Expand button */}
+      {!loading && events.length > 0 && (
+        <button
+          onClick={() => setExpanded(x => !x)}
+          style={{
+            fontFamily: FONT, fontSize: '0.65rem', fontWeight: 600,
+            color: TEXT_DIM, background: 'rgba(196,79,255,0.05)',
+            border: `1px solid ${BORDER}`, borderRadius: '8px',
+            padding: '0.4rem', cursor: 'pointer',
+            transition: 'color 0.15s, background 0.15s',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem',
+          }}
+          onMouseEnter={e => { e.currentTarget.style.color = TEXT; e.currentTarget.style.background = 'rgba(196,79,255,0.1)' }}
+          onMouseLeave={e => { e.currentTarget.style.color = TEXT_DIM; e.currentTarget.style.background = 'rgba(196,79,255,0.05)' }}
+        >
+          <span style={{ transition: 'transform 0.2s', display: 'inline-block', transform: expanded ? 'rotate(180deg)' : 'none' }}>▾</span>
+          {expanded ? 'Réduire' : `Voir tout (${events.length} événements)`}
+        </button>
+      )}
+
+      {/* Expanded — tabs */}
+      {expanded && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
+          {/* Tabs */}
+          <div style={{ display: 'flex', gap: '0.4rem' }}>
+            {[['upcoming', `À venir (${upcoming.length})`], ['past', `Passés (${past.length})`], ['all', `Tout (${events.length})`]].map(([key, label]) => (
+              <button key={key} onClick={() => setTab(key)} style={{
+                fontFamily: FONT, fontSize: '0.65rem', fontWeight: 600,
+                color: tab === key ? NEON_CYAN : TEXT_DIM,
+                background: tab === key ? `${NEON_CYAN}12` : 'transparent',
+                border: `1px solid ${tab === key ? `${NEON_CYAN}44` : BORDER}`,
+                borderRadius: '99px', padding: '0.25rem 0.8rem',
+                cursor: 'pointer', transition: 'all 0.15s',
+              }}>{label}</button>
+            ))}
+          </div>
+          {/* List */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+            {tabList.length === 0 ? (
+              <p style={{ fontFamily: FONT, fontSize: '0.7rem', color: TEXT_DIM, fontStyle: 'italic' }}>Aucun événement.</p>
+            ) : tabList.map((e, i) => (
+              <EventRow key={i} e={e} fmtTime={fmtTime} isReleased={isReleased} isPast={isPast} />
+            ))}
+          </div>
         </div>
       )}
+    </div>
+  )
+}
+
+function EventRow({ e, fmtTime, isReleased, isPast }) {
+  const released  = isReleased(e)
+  const past      = isPast(e)
+  const impactCol = IMPACT_COLOR[e.impact] || TEXT_DIM
+  const currCol   = CURRENCY_COLOR[e.country] || TEXT_DIM
+  const isHigh    = e.impact === 'High'
+  return (
+    <div style={{
+      display: 'grid', gridTemplateColumns: '3rem 2.5rem 1fr auto',
+      alignItems: 'center', gap: '0.65rem',
+      padding: '0.45rem 0.75rem',
+      background: past ? 'rgba(196,79,255,0.03)' : isHigh ? `${impactCol}12` : `${impactCol}06`,
+      border: `1px solid ${past ? BORDER : impactCol + (isHigh ? '44' : '22')}`,
+      borderLeft: `3px solid ${impactCol}`,
+      borderRadius: '8px',
+      opacity: past && !released ? 0.4 : 1,
+      boxShadow: !past && isHigh ? `0 0 10px ${impactCol}18` : 'none',
+    }}>
+      <span style={{ fontFamily: MONO, fontSize: '0.63rem', color: past ? TEXT_DIM : isHigh ? TEXT : TEXT_DIM }}>
+        {fmtTime(e.date)}
+      </span>
+      <span style={{ fontFamily: MONO, fontSize: '0.63rem', fontWeight: 700, color: currCol }}>
+        {e.country}
+      </span>
+      <span style={{ fontFamily: FONT, fontSize: '0.68rem', fontWeight: isHigh ? 600 : 500, color: past ? TEXT_DIM : isHigh ? TEXT : `${TEXT}bb`, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+        {e.title}
+      </span>
+      <div style={{ flexShrink: 0 }}>
+        {released ? (
+          <span style={{ fontFamily: MONO, fontSize: '0.65rem', fontWeight: 700, color: impactCol, textShadow: isHigh ? `0 0 8px ${impactCol}88` : 'none' }}>
+            {e.actual}
+          </span>
+        ) : e.forecast ? (
+          <span style={{ fontFamily: MONO, fontSize: '0.6rem', color: TEXT_DIM }}>
+            prev. {e.forecast}
+          </span>
+        ) : null}
+      </div>
     </div>
   )
 }
