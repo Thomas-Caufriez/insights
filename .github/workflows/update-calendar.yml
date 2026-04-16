@@ -12,7 +12,7 @@ jobs:
       - name: Fetch calendar & update Gist
         env:
           GIST_ID: 2074909e9bd9b4bc27ab9884059c2d1b
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GIST_TOKEN }}
         run: |
           DATA=$(curl -s "https://nfs.faireconomy.media/ff_calendar_thisweek.json")
           if [ -z "$DATA" ] || [ "$DATA" = "null" ]; then
