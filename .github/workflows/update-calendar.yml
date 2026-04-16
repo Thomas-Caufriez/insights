@@ -1,0 +1,29 @@
+name: Update Forex Factory Calendar
+
+on:
+  schedule:
+    - cron: '0 * * * 1-5'   # toutes les heures, lundi–vendredi
+  workflow_dispatch:
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fetch calendar & update Gist
+        env:
+          GIST_ID: 2074909e9bd9b4bc27ab9884059c2d1b
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          DATA=$(curl -s "https://nfs.faireconomy.media/ff_calendar_thisweek.json")
+          if [ -z "$DATA" ] || [ "$DATA" = "null" ]; then
+            echo "Fetch failed, skipping."
+            exit 0
+          fi
+          PAYLOAD=$(jq -n --arg content "$DATA" \
+            '{"files":{"ff_calendar.json":{"content":$content}}}')
+          curl -s -X PATCH \
+            -H "Authorization: token $GITHUB_TOKEN" \
+            -H "Content-Type: application/json" \
+            -d "$PAYLOAD" \
+            "https://api.github.com/gists/$GIST_ID"
+          echo "Gist updated."
