@@ -17,12 +17,19 @@ const FONT       = '"DM Sans", sans-serif'
 const MONO       = '"Plus Jakarta Sans", sans-serif'
 
 const SESSIONS = [
-  { name: 'Sydney',    timezone: 'Australia/Sydney',  openUTC: 22, closeUTC: 7  },
-  { name: 'Tokyo',     timezone: 'Asia/Tokyo',         openUTC: 0,  closeUTC: 9  },
-  { name: 'Francfort', timezone: 'Europe/Berlin',      openUTC: 7,  closeUTC: 16 },
-  { name: 'Londres',   timezone: 'Europe/London',      openUTC: 8,  closeUTC: 17 },
-  { name: 'New York',  timezone: 'America/New_York',   openUTC: 13, closeUTC: 22 },
+  { name: 'Sydney (ASX)',       timezone: 'Australia/Sydney',  localOpen: '10:00', localClose: '16:00', region: 'asia' },
+  { name: 'Tokyo (TSE)',        timezone: 'Asia/Tokyo',        localOpen: '09:00', localClose: '15:30', region: 'asia',    note: 'Pause déjeuner 11h30–12h30' },
+  { name: 'Hong Kong (HKEX)',   timezone: 'Asia/Hong_Kong',    localOpen: '09:30', localClose: '16:00', region: 'asia',    note: 'Pause déjeuner 12h–13h' },
+  { name: 'Shanghai (SSE)',     timezone: 'Asia/Shanghai',     localOpen: '09:30', localClose: '15:00', region: 'asia',    note: 'Pause déjeuner 11h30–13h' },
+  { name: 'Francfort (Xetra)', timezone: 'Europe/Berlin',     localOpen: '09:00', localClose: '17:30', region: 'europe' },
+  { name: 'Paris (Euronext)',   timezone: 'Europe/Paris',      localOpen: '09:00', localClose: '17:30', region: 'europe' },
+  { name: 'Londres (LSE)',      timezone: 'Europe/London',     localOpen: '08:00', localClose: '16:30', region: 'europe' },
+  { name: 'New York (NYSE)',    timezone: 'America/New_York',  localOpen: '09:30', localClose: '16:00', region: 'america' },
+  { name: 'Chicago (CME)',      timezone: 'America/Chicago',   localOpen: '08:30', localClose: '15:00', region: 'america' },
+  { name: 'Toronto (TSX)',      timezone: 'America/Toronto',   localOpen: '09:30', localClose: '16:00', region: 'america' },
 ]
+
+const REGION_LABELS = { asia: 'Asie', europe: 'Europe', america: 'Amériques' }
 
 const RULES = [
   "Ne risque jamais plus de 2% de ton capital par trade.",
@@ -35,10 +42,31 @@ const RULES = [
   "Un trade sans stop loss n'est pas un trade, c'est un pari.",
 ]
 
-function isSessionOpen(o, c) {
-  const h = new Date().getUTCHours() + new Date().getUTCMinutes() / 60
-  if (o > c) return h >= o || h < c
-  return h >= o && h < c
+// Returns current time as a decimal hour (e.g. 14.5 = 14:30) in the given IANA timezone.
+// Uses Intl.DateTimeFormat — DST is handled automatically by the browser.
+function getLocalDecimalTime(timezone, date = new Date()) {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: timezone, hour: 'numeric', minute: 'numeric', hour12: false,
+  }).formatToParts(date)
+  const h = parseInt(parts.find(p => p.type === 'hour')?.value ?? '0') % 24
+  const m = parseInt(parts.find(p => p.type === 'minute')?.value ?? '0')
+  return h + m / 60
+}
+
+function isWeekendLocal(timezone) {
+  const day = new Intl.DateTimeFormat('en-US', { timeZone: timezone, weekday: 'short' }).format(new Date())
+  return ['Sat', 'Sun'].includes(day)
+}
+
+function isSessionOpen(localOpen, localClose, timezone) {
+  if (isWeekendLocal(timezone)) return false
+  const [oh, om] = localOpen.split(':').map(Number)
+  const [ch, cm] = localClose.split(':').map(Number)
+  const now   = getLocalDecimalTime(timezone)
+  const open  = oh + om / 60
+  const close = ch + cm / 60
+  if (open > close) return now >= open || now < close
+  return now >= open && now < close
 }
 
 function getLocalTime(tz) {
@@ -53,21 +81,6 @@ const labelSt = {
   letterSpacing: '0.08em',
   color: `${NEON_CYAN}99`,
   marginBottom: '0.5rem',
-}
-
-const inputSt = {
-  fontFamily: FONT,
-  fontSize: '0.82rem',
-  fontWeight: 600,
-  color: TEXT,
-  background: 'rgba(196,79,255,0.05)',
-  border: `1px solid ${BORDER}`,
-  borderRadius: '8px',
-  padding: '0.35rem 0.65rem',
-  outline: 'none',
-  width: '100%',
-  boxSizing: 'border-box',
-  transition: 'border-color 0.2s, box-shadow 0.2s',
 }
 
 // ─── Main ─────────────────────────────────────────────────────────────────────
@@ -203,6 +216,8 @@ export default function TradingDashboard({ onSelectCategory, onHome, isMobile })
 
 const BINANCE_INTERVAL = 30
 const TD_INTERVAL      = 300
+// Clé API TwelveData volontairement laissée ici (projet personnel statique, pas de backend).
+// Merci de ne pas surcharger cette clé — quota limité à 800 requêtes/jour.
 const TD_KEY           = '96cc1cc4671f46e292207720fc5e4bbf'
 const TD_SYMBOLS       = 'JPY/USD,GBP/USD,SPY'
 
@@ -320,9 +335,12 @@ function LivePricesWidget() {
           const change = parseFloat(item.percent_change)
           return { price: isNaN(price) ? null : price, change: isNaN(change) ? null : change }
         }
-        const jpy  = parseTD('JPY/USD'); if (jpy?.price  != null) { setJpy({ rate: jpy.price, change: jpy.change }); triggerFlash('jpy', jpy.price) }
-        const gbp  = parseTD('GBP/USD'); if (gbp?.price  != null) { setGbp({ price: gbp.price, change: gbp.change }); triggerFlash('gbp', gbp.price) }
-        const spy  = parseTD('SPY');     if (spy?.price  != null) { setSpy({ price: spy.price, change: spy.change }); triggerFlash('spy', spy.price) }
+        const jpy = parseTD('JPY/USD')
+        if (jpy?.price != null) { setJpy({ rate: jpy.price, change: jpy.change }); triggerFlash('jpy', jpy.price) }
+        const gbp = parseTD('GBP/USD')
+        if (gbp?.price != null) { setGbp({ price: gbp.price, change: gbp.change }); triggerFlash('gbp', gbp.price) }
+        const spy = parseTD('SPY')
+        if (spy?.price != null) { setSpy({ price: spy.price, change: spy.change }); triggerFlash('spy', spy.price) }
       }
     } finally {
       setLoadingTD(false)
@@ -529,8 +547,6 @@ function LivePricesWidget() {
         </div>
         <AssetGrid assets={tdAssets} loading={loadingTD} flipped={flipped} flashMap={flashMap} onFlip={toggleFlip} fmtInverted={fmtInverted} getMarketStatus={getMarketStatus} />
       </div>
-
-
 
     </div>
   )
@@ -757,10 +773,31 @@ function AssetGrid({ assets, loading, flipped, flashMap, onFlip, fmtInverted, ge
 
 // ─── Sessions ─────────────────────────────────────────────────────────────────
 
-function getSessionProgress(o, c) {
-  const h = new Date().getUTCHours() + new Date().getUTCMinutes() / 60
-  const duration = o > c ? (24 - o) + c : c - o
-  const elapsed  = o > c ? (h >= o ? h - o : (24 - o) + h) : h - o
+// Converts a local time "HH:MM" from a given IANA timezone to Europe/Brussels,
+// accounting for DST of both the source timezone and Brussels.
+function toBeTime(timeStr, fromTZ) {
+  const [h, m] = timeStr.split(':').map(Number)
+  const now = new Date()
+  const localNow = getLocalDecimalTime(fromTZ, now)
+  const utcNow   = now.getUTCHours() + now.getUTCMinutes() / 60
+  const offsetH  = localNow - utcNow
+  const utcDec   = ((h + m / 60 - offsetH) % 24 + 24) % 24
+  const d = new Date(Date.UTC(
+    now.getFullYear(), now.getMonth(), now.getDate(),
+    Math.floor(utcDec),
+    Math.round((utcDec % 1) * 60),
+  ))
+  return new Intl.DateTimeFormat('fr-FR', { timeZone: 'Europe/Brussels', hour: '2-digit', minute: '2-digit' }).format(d)
+}
+
+function getSessionProgress(localOpen, localClose, timezone) {
+  const [oh, om] = localOpen.split(':').map(Number)
+  const [ch, cm] = localClose.split(':').map(Number)
+  const now      = getLocalDecimalTime(timezone)
+  const open     = oh + om / 60
+  const close    = ch + cm / 60
+  const duration = open > close ? (24 - open) + close : close - open
+  const elapsed  = open > close ? (now >= open ? now - open : (24 - open) + now) : now - open
   return Math.min(100, Math.max(0, (elapsed / duration) * 100))
 }
 
@@ -771,16 +808,20 @@ function fmtCountdown(hours) {
   return m > 0 ? `${h}h${m}min` : `${h}h`
 }
 
-function getTimeUntilClose(c) {
-  const h = new Date().getUTCHours() + new Date().getUTCMinutes() / 60
-  let r = c - h
+function getTimeUntilClose(localClose, timezone) {
+  const [ch, cm] = localClose.split(':').map(Number)
+  const now   = getLocalDecimalTime(timezone)
+  const close = ch + cm / 60
+  let r = close - now
   if (r < 0) r += 24
   return fmtCountdown(r)
 }
 
-function getTimeUntilOpen(o) {
-  const h = new Date().getUTCHours() + new Date().getUTCMinutes() / 60
-  let r = o - h
+function getTimeUntilOpen(localOpen, timezone) {
+  const [oh, om] = localOpen.split(':').map(Number)
+  const now  = getLocalDecimalTime(timezone)
+  const open = oh + om / 60
+  let r = open - now
   if (r < 0) r += 24
   return fmtCountdown(r)
 }
@@ -793,52 +834,82 @@ function SessionsWidget() {
   }, [])
 
   return (
-    <div style={{ padding: '1rem 1.5rem', flex: 1 }}>
-      <p style={labelSt}>Marchés</p>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
-        {SESSIONS.map((s) => {
-          const open     = isSessionOpen(s.openUTC, s.closeUTC)
-          const progress = open ? getSessionProgress(s.openUTC, s.closeUTC) : 0
-          const label    = open ? `ferme dans ${getTimeUntilClose(s.closeUTC)}` : `ouvre dans ${getTimeUntilOpen(s.openUTC)}`
-
-          return (
-            <div key={s.name}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.3rem' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <div style={{
-                    width: '6px', height: '6px', borderRadius: '50%', flexShrink: 0,
-                    background: open ? NEON_GREEN : 'rgba(196,79,255,0.2)',
-                    boxShadow: open ? `0 0 6px ${NEON_GREEN}, 0 0 14px ${NEON_GREEN}55` : 'none',
-                    transition: 'all 0.4s',
-                  }} />
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.05rem' }}>
-                    <span style={{ fontFamily: FONT, fontSize: '0.78rem', fontWeight: 600, color: open ? TEXT : TEXT_DIM }}>
-                      {s.name}
-                    </span>
-                    <span style={{ fontFamily: FONT, fontSize: '0.58rem', color: open ? `${NEON_GREEN}99` : TEXT_DIM }}>
-                      {label}
-                    </span>
+    <div style={{ padding: '1rem 1.5rem', flex: 1, overflowY: 'auto' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 0 }}>
+        <p style={{ ...labelSt, marginBottom: 0 }}>Marchés</p>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+          <span style={{ fontFamily: FONT, fontSize: '0.5rem', color: 'rgba(245,230,255,0.25)', letterSpacing: '0.04em' }}>heure locale</span>
+          <span style={{ width: '1px', height: '0.75rem', background: 'rgba(196,79,255,0.4)', flexShrink: 0 }} />
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+            <span style={{ fontFamily: FONT, fontSize: '0.5rem', color: 'rgba(245,230,255,0.25)', letterSpacing: '0.04em' }}>UTC+2</span>
+            <span style={{ fontFamily: MONO, fontSize: '0.7rem', fontWeight: 700, color: NEON_CYAN }}>
+              {getLocalTime('Europe/Brussels')}
+            </span>
+          </div>
+        </div>
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+        {['asia', 'europe', 'america'].map(region => (
+          <div key={region}>
+            <p style={{ ...labelSt, fontSize: '0.55rem', opacity: 0.45, marginBottom: '0.5rem' }}>
+              {REGION_LABELS[region]}
+            </p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
+              {SESSIONS.filter(s => s.region === region).map(s => {
+                const open     = isSessionOpen(s.localOpen, s.localClose, s.timezone)
+                const progress = open ? getSessionProgress(s.localOpen, s.localClose, s.timezone) : 0
+                const label    = open
+                  ? `ferme dans ${getTimeUntilClose(s.localClose, s.timezone)}`
+                  : `ouvre dans ${getTimeUntilOpen(s.localOpen, s.timezone)}`
+                const beOpen   = toBeTime(s.localOpen, s.timezone)
+                const beClose  = toBeTime(s.localClose, s.timezone)
+                return (
+                  <div key={s.name}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem', marginBottom: '0.25rem' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', flex: 1, minWidth: 0 }}>
+                        <div style={{
+                          width: '5px', height: '5px', borderRadius: '50%', flexShrink: 0,
+                          background: open ? NEON_GREEN : 'rgba(196,79,255,0.2)',
+                          boxShadow: open ? `0 0 5px ${NEON_GREEN}, 0 0 10px ${NEON_GREEN}55` : 'none',
+                          transition: 'all 0.4s',
+                        }} />
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.05rem', minWidth: 0 }}>
+                          <span style={{ fontFamily: FONT, fontSize: '0.72rem', fontWeight: 600, color: open ? TEXT : TEXT_DIM }}>
+                            {s.name}
+                          </span>
+                          <span style={{ fontFamily: FONT, fontSize: '0.55rem', color: open ? `${NEON_GREEN}99` : TEXT_DIM }}>
+                            {label}
+                          </span>
+                        </div>
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexShrink: 0 }}>
+                        <span style={{ fontFamily: MONO, fontSize: '0.72rem', fontWeight: 700, color: open ? TEXT : TEXT_DIM }}>
+                          {getLocalTime(s.timezone)}
+                        </span>
+                        <span style={{ width: '1px', height: '1rem', background: 'rgba(196,79,255,0.4)', flexShrink: 0 }} />
+                        <span style={{ fontFamily: MONO, fontSize: '0.62rem', fontWeight: 500, color: open ? `${NEON_GREEN}cc` : `${NEON_PINK}77`, whiteSpace: 'nowrap' }}>
+                          {beOpen}–{beClose}
+                        </span>
+                      </div>
+                    </div>
+                    <div style={{ height: '2px', background: 'rgba(196,79,255,0.1)', borderRadius: '99px', overflow: 'hidden' }}>
+                      {open && (
+                        <div style={{
+                          height: '100%',
+                          width: `${progress}%`,
+                          background: `linear-gradient(90deg, ${NEON_GREEN}55, ${NEON_GREEN})`,
+                          borderRadius: '99px',
+                          boxShadow: `0 0 5px ${NEON_GREEN}66`,
+                          transition: 'width 1s ease',
+                        }} />
+                      )}
+                    </div>
                   </div>
-                </div>
-                <span style={{ fontFamily: MONO, fontSize: '0.7rem', color: open ? TEXT : TEXT_DIM }}>
-                  {getLocalTime(s.timezone)}
-                </span>
-              </div>
-              <div style={{ height: '2px', background: 'rgba(196,79,255,0.1)', borderRadius: '99px', overflow: 'hidden' }}>
-                {open && (
-                  <div style={{
-                    height: '100%',
-                    width: `${progress}%`,
-                    background: `linear-gradient(90deg, ${NEON_GREEN}55, ${NEON_GREEN})`,
-                    borderRadius: '99px',
-                    boxShadow: `0 0 6px ${NEON_GREEN}66`,
-                    transition: 'width 1s ease',
-                  }} />
-                )}
-              </div>
+                )
+              })}
             </div>
-          )
-        })}
+          </div>
+        ))}
       </div>
     </div>
   )
@@ -889,7 +960,7 @@ function RulesWidget() {
   )
 }
 
-// ─── Newsletter placeholder ───────────────────────────────────────────────────
+// ─── Economic calendar ────────────────────────────────────────────────────────
 
 const GIST_URL = 'https://gist.githubusercontent.com/Thomas-Caufriez/2074909e9bd9b4bc27ab9884059c2d1b/raw/ff_calendar.json'
 
@@ -923,8 +994,10 @@ function CalendarWidget() {
           .filter(e => e.date.slice(0, 10) === todayStr && new Date(e.date) >= cutoff)
           .sort((a, b) => new Date(a.date) - new Date(b.date))
         setEvents(todayEvents)
-      } catch {}
-      finally { setLoading(false) }
+      } catch {
+      } finally {
+        setLoading(false)
+      }
     }
     load()
   }, [])
@@ -1221,109 +1294,7 @@ function BasicCalcWidget() {
   )
 }
 
-// ─── Position calculator ──────────────────────────────────────────────────────
-
-function PositionCalcWidget() {
-  const [capital, setCapital] = useState('10000')
-  const [risk,    setRisk]    = useState('1')
-  const [stop,    setStop]    = useState('2')
-
-  const maxLoss = (parseFloat(capital) * parseFloat(risk)) / 100
-  const posSize = maxLoss / (parseFloat(stop) / 100)
-  const valid   = !isNaN(posSize) && isFinite(posSize) && posSize > 0
-
-  return (
-    <div style={{ padding: '1.4rem 1.5rem' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginBottom: '0.5rem' }}>
-        <p style={{ ...labelSt, marginBottom: 0 }}>Taille de position</p>
-        <InfoTooltip text="Entrez votre capital total, le % de risque accepté par trade et la distance de votre stop (en %). Calcule la perte maximale et la taille de position correspondante." />
-      </div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.55rem', marginTop: '0.5rem' }}>
-        <CalcField label="Capital (€)" value={capital} onChange={setCapital} />
-        <CalcField label="Risque (%)"  value={risk}    onChange={setRisk} />
-        <CalcField label="Stop (%)"    value={stop}    onChange={setStop} />
-      </div>
-      <div style={{ marginTop: '1rem', paddingTop: '0.8rem', borderTop: `1px solid ${BORDER}` }}>
-        <ResultRow label="Perte max"    value={valid ? `${maxLoss.toFixed(0)} €` : '—'} danger />
-        <ResultRow label="Position max" value={valid ? `${posSize.toFixed(0)} €` : '—'} />
-      </div>
-    </div>
-  )
-}
-
-// ─── R/R calculator ───────────────────────────────────────────────────────────
-
-function RRCalcWidget() {
-  const [entry,  setEntry]  = useState('100')
-  const [stop,   setStop]   = useState('95')
-  const [target, setTarget] = useState('115')
-
-  const e = parseFloat(entry), s = parseFloat(stop), t = parseFloat(target)
-  const riskAmt   = e - s
-  const rewardAmt = t - e
-  const rr        = riskAmt > 0 ? rewardAmt / riskAmt : null
-  const riskPct   = e > 0 ? (riskAmt / e) * 100 : null
-  const rewardPct = e > 0 ? (rewardAmt / e) * 100 : null
-  const valid     = rr !== null && isFinite(rr) && e > s && t > e
-  const riskShare = valid ? riskAmt / (riskAmt + rewardAmt) : null
-
-  return (
-    <div style={{ padding: '1.4rem 1.5rem' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginBottom: '0.5rem' }}>
-        <p style={{ ...labelSt, marginBottom: 0 }}>Risk / Reward</p>
-        <InfoTooltip text="Entrez votre prix d'entrée, votre stop loss et votre objectif de prix. Calcule le ratio risque/récompense et visualise la proportion de chaque côté du trade." />
-      </div>
-
-      {/* Inputs side by side (benefits from span 2) */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.65rem', marginTop: '0.5rem' }}>
-        <CalcField label="Entrée" value={entry}  onChange={setEntry} />
-        <CalcField label="Stop"   value={stop}   onChange={setStop} />
-        <CalcField label="Cible"  value={target} onChange={setTarget} />
-      </div>
-
-      <div style={{ marginTop: '1rem', paddingTop: '0.8rem', borderTop: `1px solid ${BORDER}` }}>
-        {valid ? (
-          <>
-            <div style={{ display: 'flex', gap: '2rem', marginBottom: '0.75rem' }}>
-              <ResultRow label="Risque" value={`${riskAmt.toFixed(2)} (${riskPct?.toFixed(1)}%)`}   danger />
-              <ResultRow label="Gain"   value={`${rewardAmt.toFixed(2)} (${rewardPct?.toFixed(1)}%)`} positive />
-              <ResultRow label="Ratio"  value={`1 : ${rr.toFixed(2)}`} accent />
-            </div>
-            {/* Visual R/R bar */}
-            <div>
-              <div style={{ display: 'flex', height: '6px', borderRadius: '99px', overflow: 'hidden', gap: '2px' }}>
-                <div style={{
-                  width: `${riskShare * 100}%`, minWidth: '4px',
-                  background: NEON_PINK, boxShadow: `0 0 6px ${NEON_PINK}`,
-                  borderRadius: '99px 0 0 99px',
-                }} />
-                <div style={{
-                  flex: 1,
-                  background: NEON_GREEN, boxShadow: `0 0 6px ${NEON_GREEN}`,
-                  borderRadius: '0 99px 99px 0',
-                }} />
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '0.3rem' }}>
-                <span style={{ fontFamily: FONT, fontSize: '0.6rem', color: `${NEON_PINK}88` }}>
-                  {(riskShare * 100).toFixed(0)}% risque
-                </span>
-                <span style={{ fontFamily: FONT, fontSize: '0.6rem', color: `${NEON_GREEN}88` }}>
-                  {((1 - riskShare) * 100).toFixed(0)}% reward
-                </span>
-              </div>
-            </div>
-          </>
-        ) : (
-          <p style={{ fontFamily: FONT, fontSize: '0.72rem', color: TEXT_DIM, fontStyle: 'italic' }}>
-            Entrée &gt; Stop, Cible &gt; Entrée
-          </p>
-        )}
-      </div>
-    </div>
-  )
-}
-
-// ─── Shared ───────────────────────────────────────────────────────────────────
+// ─── Shared helpers ───────────────────────────────────────────────────────────
 
 function InfoTooltip({ text }) {
   const [show, setShow] = useState(false)
@@ -1360,35 +1331,6 @@ function InfoTooltip({ text }) {
           </p>
         </div>
       )}
-    </div>
-  )
-}
-
-function CalcField({ label, value, onChange }) {
-  return (
-    <div>
-      <p style={{ ...labelSt, marginBottom: '0.2rem', fontSize: '0.62rem' }}>{label}</p>
-      <input
-        type="number" inputMode="decimal"
-        value={value} onChange={(e) => onChange(e.target.value)}
-        style={inputSt}
-        onFocus={(e) => { e.target.style.borderColor = `${NEON_CYAN}88`; e.target.style.boxShadow = `0 0 12px ${NEON_CYAN}22` }}
-        onBlur={(e)  => { e.target.style.borderColor = BORDER; e.target.style.boxShadow = 'none' }}
-      />
-    </div>
-  )
-}
-
-function ResultRow({ label, value, accent, danger, positive }) {
-  const color = danger ? NEON_PINK : positive ? NEON_GREEN : accent ? NEON_CYAN : TEXT
-  return (
-    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '0.3rem' }}>
-      <span style={{ fontFamily: FONT, fontSize: '0.72rem', fontWeight: 500, color: TEXT_DIM }}>
-        {label}
-      </span>
-      <span style={{ fontFamily: MONO, fontSize: '0.78rem', fontWeight: accent ? 700 : 400, color }}>
-        {value}
-      </span>
     </div>
   )
 }
