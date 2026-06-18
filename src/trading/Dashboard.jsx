@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import { createPortal } from 'react-dom'
 import { tradingCategories } from './data'
 import { useIsMobile } from '../hooks/useIsMobile'
 
@@ -16,31 +17,13 @@ const BORDER     = 'rgba(196,79,255,0.15)'
 const FONT       = '"DM Sans", sans-serif'
 const MONO       = '"Plus Jakarta Sans", sans-serif'
 
-const SESSIONS = [
-  { name: 'Sydney (ASX)',       timezone: 'Australia/Sydney',  localOpen: '10:00', localClose: '16:00', region: 'asia' },
-  { name: 'Tokyo (TSE)',        timezone: 'Asia/Tokyo',        localOpen: '09:00', localClose: '15:30', region: 'asia',    note: 'Pause déjeuner 11h30–12h30' },
-  { name: 'Hong Kong (HKEX)',   timezone: 'Asia/Hong_Kong',    localOpen: '09:30', localClose: '16:00', region: 'asia',    note: 'Pause déjeuner 12h–13h' },
-  { name: 'Shanghai (SSE)',     timezone: 'Asia/Shanghai',     localOpen: '09:30', localClose: '15:00', region: 'asia',    note: 'Pause déjeuner 11h30–13h' },
-  { name: 'Francfort (Xetra)', timezone: 'Europe/Berlin',     localOpen: '09:00', localClose: '17:30', region: 'europe' },
-  { name: 'Paris (Euronext)',   timezone: 'Europe/Paris',      localOpen: '09:00', localClose: '17:30', region: 'europe' },
-  { name: 'Londres (LSE)',      timezone: 'Europe/London',     localOpen: '08:00', localClose: '16:30', region: 'europe' },
-  { name: 'New York (NYSE)',    timezone: 'America/New_York',  localOpen: '09:30', localClose: '16:00', region: 'america' },
-  { name: 'Chicago (CME)',      timezone: 'America/Chicago',   localOpen: '08:30', localClose: '15:00', region: 'america' },
-  { name: 'Toronto (TSX)',      timezone: 'America/Toronto',   localOpen: '09:30', localClose: '16:00', region: 'america' },
+const KZ_TZ = 'America/New_York'
+const KILL_ZONES = [
+  { name: 'Asia',     localOpen: '20:00', localClose: '00:00', color: '#ff6b9d' },
+  { name: 'London',   localOpen: '02:00', localClose: '05:00', color: '#a78bfa' },
+  { name: 'New York', localOpen: '07:00', localClose: '10:00', color: NEON_CYAN  },
 ]
 
-const REGION_LABELS = { asia: 'Asie', europe: 'Europe', america: 'Amériques' }
-
-const RULES = [
-  "Ne risque jamais plus de 2% de ton capital par trade.",
-  "Ne trade pas contre la tendance principale.",
-  "Coupe tes pertes rapidement. Laisse courir tes gains.",
-  "Les émotions sont ton pire ennemi. Respecte ton plan.",
-  "Attends la confirmation avant d'entrer en position.",
-  "Le marché a toujours raison. Ton analyse peut avoir tort.",
-  "Ne chase pas un trade manqué. Un autre arrivera.",
-  "Un trade sans stop loss n'est pas un trade, c'est un pari.",
-]
 
 // Returns current time as a decimal hour (e.g. 14.5 = 14:30) in the given IANA timezone.
 // Uses Intl.DateTimeFormat — DST is handled automatically by the browser.
@@ -75,7 +58,7 @@ function getLocalTime(tz) {
 
 const labelSt = {
   fontFamily: FONT,
-  fontSize: '0.7rem',
+  fontSize: '0.78rem',
   fontWeight: 700,
   textTransform: 'uppercase',
   letterSpacing: '0.08em',
@@ -87,6 +70,7 @@ const labelSt = {
 
 export default function TradingDashboard({ onSelectCategory, onHome, isMobile }) {
   const isNarrow = useIsMobile(700)
+  const [fearGreed, setFearGreed] = useState(null)
 
   return (
     <div style={{
@@ -192,11 +176,13 @@ export default function TradingDashboard({ onSelectCategory, onHome, isMobile })
           overflow: 'hidden',
         }}>
           {/* Row 1 — market data (prominent) */}
-          <div style={{ background: CARD, gridColumn: isNarrow ? '1' : 'span 2' }}><LivePricesWidget /></div>
+          <div style={{ background: CARD, gridColumn: isNarrow ? '1' : 'span 2' }}><LivePricesWidget onFearGreed={setFearGreed} /></div>
           <div style={{ background: CARD, display: 'flex', flexDirection: 'column' }}>
-            <RulesWidget compact />
-            <div style={{ height: '1px', background: BORDER, flexShrink: 0 }} />
             <SessionsWidget />
+            <div style={{ height: '1px', background: BORDER, flexShrink: 0 }} />
+            <div style={{ flex: 1, overflow: 'hidden' }}>
+              <FearGreedWidget fearGreed={fearGreed} />
+            </div>
           </div>
 
           {/* Row 2 — calendar full width */}
@@ -219,25 +205,21 @@ const TD_INTERVAL      = 300
 // Clé API TwelveData volontairement laissée ici (projet personnel statique, pas de backend).
 // Merci de ne pas surcharger cette clé — quota limité à 800 requêtes/jour.
 const TD_KEY           = '96cc1cc4671f46e292207720fc5e4bbf'
-const TD_SYMBOLS       = 'JPY/USD,GBP/USD,SPY'
+const TD_SYMBOLS       = 'EUR/USD,GBP/USD,USD/JPY,QQQ'
 
-function LivePricesWidget() {
+function LivePricesWidget({ onFearGreed }) {
   const [btc,  setBtc]  = useState(null)
+  const [eth,  setEth]  = useState(null)
   const [eur,  setEur]  = useState(null)
   const [gbp,  setGbp]  = useState(null)
-  const [gold, setGold] = useState(null)
   const [jpy,  setJpy]  = useState(null)
-  const [peg,  setPeg]  = useState(null)
-  const [eth,  setEth]  = useState(null)
-  const [spy,  setSpy]  = useState(null)
-  const [fearGreed,      setFearGreed]        = useState(null)
-  const [flipped,         setFlipped]         = useState({ 'JPY / USD': true })
+  const [qqq,  setQqq]  = useState(null)
   const [flashMap,        setFlashMap]        = useState({})
   const [loadingBinance,  setLoadingBinance]  = useState(true)
   const [loadingTD,       setLoadingTD]       = useState(true)
   const [countdownBinance, setCountdownBinance] = useState(BINANCE_INTERVAL)
   const [countdownTD,      setCountdownTD]      = useState(TD_INTERVAL)
-  const [spinningBinance,  setSpinningBinance]  = useState(false)
+  const [candles, setCandles] = useState({})
 
   const autoBinanceRef   = useRef(null)
   const autoTDRef        = useRef(null)
@@ -285,12 +267,9 @@ function LivePricesWidget() {
     fetchingBinance.current = true
     try {
       const base = import.meta.env.DEV ? '/proxy/binance' : 'https://api.binance.com'
-      const [btcRes, ethRes, goldRes, eurRes, pegRes] = await Promise.allSettled([
+      const [btcRes, ethRes] = await Promise.allSettled([
         fetchWithTimeout(`${base}/api/v3/ticker/24hr?symbol=BTCUSDT`),
         fetchWithTimeout(`${base}/api/v3/ticker/24hr?symbol=ETHUSDT`),
-        fetchWithTimeout(`${base}/api/v3/ticker/24hr?symbol=PAXGUSDT`),
-        fetchWithTimeout(`${base}/api/v3/ticker/24hr?symbol=EURUSDT`),
-        fetchWithTimeout(`${base}/api/v3/ticker/price?symbol=USDCUSDT`),
       ])
       const parse = (res, set, key) => {
         if (res.status !== 'fulfilled' || !res.value.ok) return
@@ -300,21 +279,8 @@ function LivePricesWidget() {
           triggerFlash(key, price)
         }).catch(() => {})
       }
-      parse(btcRes,  setBtc,  'btc')
-      parse(ethRes,  setEth,  'eth')
-      parse(goldRes, setGold, 'gold')
-      const parseForex = (res, set, key) => {
-        if (res.status !== 'fulfilled' || !res.value.ok) return
-        res.value.json().then(d => {
-          const rate = parseFloat(d.lastPrice)
-          set({ rate, change: parseFloat(d.priceChangePercent), high: parseFloat(d.highPrice), low: parseFloat(d.lowPrice), volume: parseFloat(d.quoteVolume) })
-          triggerFlash(key, rate)
-        }).catch(() => {})
-      }
-      parseForex(eurRes, setEur, 'eur')
-      if (pegRes.status === 'fulfilled' && pegRes.value.ok) {
-        pegRes.value.json().then(d => setPeg(parseFloat(d.price))).catch(() => {})
-      }
+      parse(btcRes, setBtc, 'btc')
+      parse(ethRes, setEth, 'eth')
     } finally {
       setLoadingBinance(false)
       fetchingBinance.current = false
@@ -335,12 +301,14 @@ function LivePricesWidget() {
           const change = parseFloat(item.percent_change)
           return { price: isNaN(price) ? null : price, change: isNaN(change) ? null : change }
         }
-        const jpy = parseTD('JPY/USD')
-        if (jpy?.price != null) { setJpy({ rate: jpy.price, change: jpy.change }); triggerFlash('jpy', jpy.price) }
+        const eur = parseTD('EUR/USD')
+        if (eur?.price != null) { setEur({ rate: eur.price, change: eur.change }); triggerFlash('eur', eur.price) }
         const gbp = parseTD('GBP/USD')
         if (gbp?.price != null) { setGbp({ price: gbp.price, change: gbp.change }); triggerFlash('gbp', gbp.price) }
-        const spy = parseTD('SPY')
-        if (spy?.price != null) { setSpy({ price: spy.price, change: spy.change }); triggerFlash('spy', spy.price) }
+        const jpyData = parseTD('USD/JPY')
+        if (jpyData?.price != null) { setJpy({ price: jpyData.price, change: jpyData.change }); triggerFlash('jpy', jpyData.price) }
+        const qqqData = parseTD('QQQ')
+        if (qqqData?.price != null) { setQqq({ price: qqqData.price, change: qqqData.change }); triggerFlash('qqq', qqqData.price) }
       }
     } finally {
       setLoadingTD(false)
@@ -354,9 +322,50 @@ function LivePricesWidget() {
       if (res.ok) {
         const d = await res.json()
         const item = d.data?.[0]
-        if (item) setFearGreed({ value: parseInt(item.value), label: item.value_classification })
+        if (item) onFearGreed?.({ value: parseInt(item.value), label: item.value_classification })
       }
     } catch {}
+  }
+
+  async function fetchCandles() {
+    const base = import.meta.env.DEV ? '/proxy/binance' : 'https://api.binance.com'
+    const [btcKlines, ethKlines, tdSeries] = await Promise.allSettled([
+      fetchWithTimeout(`${base}/api/v3/klines?symbol=BTCUSDT&interval=4h&limit=8`),
+      fetchWithTimeout(`${base}/api/v3/klines?symbol=ETHUSDT&interval=4h&limit=8`),
+      fetchWithTimeout(`https://api.twelvedata.com/time_series?symbol=EUR/USD,GBP/USD,USD/JPY,QQQ&interval=4h&outputsize=8&apikey=${TD_KEY}`),
+    ])
+
+    const parsed = {}
+
+    const parseKlines = (res, key) => {
+      if (res.status !== 'fulfilled' || !res.value.ok) return
+      res.value.json().then(data => {
+        parsed[key] = data.map(k => ({
+          open: parseFloat(k[1]), high: parseFloat(k[2]),
+          low: parseFloat(k[3]), close: parseFloat(k[4]),
+        }))
+        setCandles(prev => ({ ...prev, [key]: parsed[key] }))
+      }).catch(() => {})
+    }
+
+    parseKlines(btcKlines, 'btc')
+    parseKlines(ethKlines, 'eth')
+
+    if (tdSeries.status === 'fulfilled' && tdSeries.value.ok) {
+      tdSeries.value.json().then(d => {
+        const MAP = { 'EUR/USD': 'eur', 'GBP/USD': 'gbp', 'USD/JPY': 'jpy', 'QQQ': 'qqq' }
+        const update = {}
+        for (const [sym, key] of Object.entries(MAP)) {
+          const series = d[sym]
+          if (!series?.values?.length) continue
+          update[key] = [...series.values].reverse().map(v => ({
+            open: parseFloat(v.open), high: parseFloat(v.high),
+            low: parseFloat(v.low), close: parseFloat(v.close),
+          }))
+        }
+        setCandles(prev => ({ ...prev, ...update }))
+      }).catch(() => {})
+    }
   }
 
   function startCountdownBinance() {
@@ -371,15 +380,6 @@ function LivePricesWidget() {
     tickTDRef.current = setInterval(() => setCountdownTD(c => Math.max(0, c - 1)), 1000)
   }
 
-  async function handleBinanceRefresh() {
-    if (spinningBinance) return
-    setSpinningBinance(true)
-    startCountdownBinance()
-    clearInterval(autoBinanceRef.current)
-    autoBinanceRef.current = setInterval(() => { fetchBinancePrices(); startCountdownBinance() }, BINANCE_INTERVAL * 1000)
-    await fetchBinancePrices()
-    setSpinningBinance(false)
-  }
 
   useEffect(() => {
     let cancelled = false
@@ -397,9 +397,11 @@ function LivePricesWidget() {
     })
 
     if (!cancelled) fetchFearGreed()
+    const candleTimer = setTimeout(() => { if (!cancelled) fetchCandles() }, 15000)
 
     return () => {
       cancelled = true
+      clearTimeout(candleTimer)
       clearInterval(autoBinanceRef.current)
       clearInterval(autoTDRef.current)
       clearInterval(tickBinanceRef.current)
@@ -426,78 +428,56 @@ function LivePricesWidget() {
     return time >= market.open && time < market.close
   }
 
-  function toggleFlip(symbol) {
-    setFlipped(f => ({ ...f, [symbol]: !f[symbol] }))
-  }
-
-  function fmtInverted(price) {
-    if (!price || price <= 0) return '—'
-    const inv = 1 / price
-    if (inv >= 10000) return inv.toLocaleString('en-US', { maximumFractionDigits: 0 })
-    if (inv >= 100)   return inv.toFixed(2)
-    if (inv >= 1)     return inv.toFixed(4)
-    if (inv >= 0.001) return inv.toFixed(6)
-    return inv.toExponential(3)
-  }
-
-  const binanceAssets = [
+  const forexAssets = [
     {
-      symbol: 'BTC / USDT', name: 'Bitcoin - Tether',
-      price: btc ? `$${btc.price.toLocaleString('en-US', { maximumFractionDigits: 0 })}` : null,
-      change: btc?.change ?? null, color: '#ff9900', flashKey: 'btc',
-      high: btc?.high, low: btc?.low, rawNum: btc?.price, volume: btc?.volume,
-      info: 'Données Binance · Paire Bitcoin / Tether',
-    },
-    {
-      symbol: 'ETH / USDT', name: 'Ethereum - Tether',
-      price: eth ? `$${eth.price.toLocaleString('en-US', { maximumFractionDigits: 2 })}` : null,
-      change: eth?.change ?? null, color: '#627eea', flashKey: 'eth',
-      high: eth?.high, low: eth?.low, rawNum: eth?.price, volume: eth?.volume,
-      info: 'Données Binance · Paire Ethereum / Tether',
-    },
-    {
-      symbol: 'EUR / USDT', name: 'Euro - Tether',
+      symbol: 'EUR / USD', name: 'Euro - Dollar',
       price: eur?.rate != null ? eur.rate.toFixed(4) : null,
       change: eur?.change ?? null, color: NEON_CYAN, flashKey: 'eur',
-      high: eur?.high, low: eur?.low, rawNum: eur?.rate, volume: eur?.volume,
-      info: 'Données Binance · Paire Euro / Tether · Proche du cours EUR/USD',
-      flipSymbol: 'USDT / EUR', rawPrice: eur?.rate ?? null,
-      market: { type: 'forex', tz: 'America/New_York' },
-    },
-    {
-      symbol: 'XAU / USDT', name: 'Or - Tether',
-      price: gold ? `$${gold.price.toLocaleString('en-US', { maximumFractionDigits: 0 })}` : null,
-      change: gold?.change ?? null, color: '#ffd700', flashKey: 'gold',
-      high: gold?.high, low: gold?.low, rawNum: gold?.price, volume: gold?.volume,
-      info: 'Données Binance · PAX Gold (PAXG) — or tokenisé, 1 token = 1 once troy',
-    },
-  ]
-
-  const tdAssets = [
-    {
-      symbol: 'JPY / USD', name: 'Yen - Dollar',
-      price: jpy?.rate != null ? jpy.rate.toFixed(5) : null,
-      change: jpy?.change ?? null, color: '#ff6b9d', flashKey: 'jpy',
-      info: 'Données Twelve Data · JPY/USD spot · Mis à jour toutes les 5 min',
-      flipSymbol: 'USD / JPY', rawPrice: jpy?.rate ?? null,
+      info: [{ label: 'Source', value: 'Twelve Data' }, { label: 'Paire', value: 'EUR/USD spot' }, { label: 'Marché', value: 'Forex' }, { label: 'Refresh', value: '5 min' }, { label: 'Bougies', value: '4h · 8 dernières' }],
       market: { type: 'forex', tz: 'America/New_York' },
     },
     {
       symbol: 'GBP / USD', name: 'Livre sterling - Dollar',
       price: gbp?.price != null ? gbp.price.toFixed(4) : null,
       change: gbp?.change ?? null, color: '#a78bfa', flashKey: 'gbp',
-      info: 'Données Twelve Data · GBP/USD spot · Cours réel depuis les marchés forex · Mis à jour toutes les 5 min',
-      flipSymbol: 'USD / GBP', rawPrice: gbp?.price ?? null,
+      info: [{ label: 'Source', value: 'Twelve Data' }, { label: 'Paire', value: 'GBP/USD spot' }, { label: 'Marché', value: 'Forex' }, { label: 'Refresh', value: '5 min' }, { label: 'Bougies', value: '4h · 8 dernières' }],
       market: { type: 'forex', tz: 'America/New_York' },
     },
     {
-      symbol: 'SPY', name: 'SPDR S&P 500 ETF',
-      price: spy?.price != null ? `$${spy.price.toFixed(2)}` : null,
-      change: spy?.change ?? null, color: '#34d399', flashKey: 'spy',
-      info: 'Données Twelve Data · SPY NYSE · S&P 500 ETF · Mis à jour toutes les 5 min',
+      symbol: 'JPY / USD', name: 'Yen - Dollar',
+      price: jpy?.price != null ? (1 / jpy.price).toFixed(6) : null,
+      change: jpy?.change != null ? -jpy.change : null, color: '#ff6b9d', flashKey: 'jpy',
+      info: [{ label: 'Source', value: 'Twelve Data' }, { label: 'Paire', value: 'USD/JPY inversé' }, { label: 'Marché', value: 'Forex' }, { label: 'Refresh', value: '5 min' }, { label: 'Bougies', value: '4h · 8 dernières' }],
+      invertCandles: true,
+      market: { type: 'forex', tz: 'America/New_York' },
+    },
+  ]
+
+  const indicesAssets = [
+    {
+      symbol: 'NASDAQ 100', name: 'Invesco QQQ Trust',
+      price: qqq?.price != null ? `$${parseFloat(qqq.price).toFixed(2)}` : null,
+      change: qqq?.change ?? null, color: '#60a5fa', flashKey: 'qqq',
+      info: [{ label: 'Source', value: 'Twelve Data' }, { label: 'ETF', value: 'Invesco QQQ Trust' }, { label: 'Indice', value: 'NASDAQ 100' }, { label: 'Bourse', value: 'NYSE' }, { label: 'Refresh', value: '5 min' }, { label: 'Bougies', value: '4h · 8 dernières' }],
       market: { type: 'stock', tz: 'America/New_York', open: 9.5, close: 16 },
     },
   ]
+
+  const cryptoAssets = [
+    {
+      symbol: 'BTC / USDT', name: 'Bitcoin - Tether',
+      price: btc ? `$${btc.price.toLocaleString('en-US', { maximumFractionDigits: 0 })}` : null,
+      change: btc?.change ?? null, color: '#ff9900', flashKey: 'btc',
+      info: [{ label: 'Source', value: 'Binance' }, { label: 'Paire', value: 'BTC / USDT' }, { label: 'Marché', value: 'Crypto' }, { label: 'Refresh', value: '30s' }, { label: 'Bougies', value: '4h · 8 dernières' }],
+    },
+    {
+      symbol: 'ETH / USDT', name: 'Ethereum - Tether',
+      price: eth ? `$${eth.price.toLocaleString('en-US', { maximumFractionDigits: 2 })}` : null,
+      change: eth?.change ?? null, color: '#627eea', flashKey: 'eth',
+      info: [{ label: 'Source', value: 'Binance' }, { label: 'Paire', value: 'ETH / USDT' }, { label: 'Marché', value: 'Crypto' }, { label: 'Refresh', value: '30s' }, { label: 'Bougies', value: '4h · 8 dernières' }],
+    },
+  ]
+
 
   function fmtTD(s) {
     const m = Math.floor(s / 60)
@@ -508,83 +488,31 @@ function LivePricesWidget() {
   return (
     <div style={{ padding: '1.4rem 1.75rem', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
 
-      {/* ── Binance section ── */}
+      {/* ── Forex ── */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <p style={{ ...labelSt, marginBottom: 0 }}>Binance</p>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <span style={{ fontFamily: MONO, fontSize: '0.62rem', color: TEXT_DIM }}>{countdownBinance}s</span>
-            <button
-              onClick={handleBinanceRefresh}
-              title="Rafraîchir"
-              style={{
-                fontFamily: FONT, fontSize: '0.85rem',
-                color: spinningBinance ? TEXT_DIM : NEON_CYAN,
-                background: 'none',
-                border: `1px solid ${spinningBinance ? BORDER : `${NEON_CYAN}44`}`,
-                borderRadius: '6px', width: '26px', height: '22px',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                cursor: spinningBinance ? 'default' : 'pointer',
-                transition: 'color 0.15s, border-color 0.15s', lineHeight: 1,
-              }}
-              onMouseEnter={(e) => { if (!spinningBinance) e.currentTarget.style.boxShadow = `0 0 8px ${NEON_CYAN}44` }}
-              onMouseLeave={(e) => { e.currentTarget.style.boxShadow = 'none' }}
-            >↻</button>
+          <p style={{ ...labelSt, marginBottom: 0 }}>Forex</p>
+          <span style={{ fontFamily: MONO, fontSize: '0.62rem', color: TEXT_DIM }}>Forex · ↻ {fmtTD(countdownTD)}</span>
+        </div>
+        <AssetGrid columns={3} assets={forexAssets} loading={loadingTD} flashMap={flashMap} getMarketStatus={getMarketStatus} candleData={candles} />
+      </div>
+
+      {/* ── Marchés (Indices + Crypto) ── */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <p style={{ ...labelSt, marginBottom: 0 }}>Marchés</p>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            <span style={{ fontFamily: MONO, fontSize: '0.62rem', color: TEXT_DIM }}>NASDAQ · ↻ {fmtTD(countdownTD)}</span>
+            <span style={{ fontFamily: MONO, fontSize: '0.62rem', color: TEXT_DIM }}>Crypto · ↻ {countdownBinance}s</span>
           </div>
         </div>
-        <AssetGrid assets={binanceAssets} loading={loadingBinance} flipped={flipped} flashMap={flashMap} onFlip={toggleFlip} fmtInverted={fmtInverted} getMarketStatus={getMarketStatus} />
-        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem', flexWrap: 'wrap' }}>
-          <UsdtPegIndicator peg={peg} />
-          <FearGreedWidget fearGreed={fearGreed} />
-        </div>
-      </div>
-
-      {/* ── Twelve Data section ── */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <p style={{ ...labelSt, marginBottom: 0 }}>Twelve Data</p>
-          <span style={{ fontFamily: MONO, fontSize: '0.62rem', color: TEXT_DIM }}>↻ {fmtTD(countdownTD)}</span>
-        </div>
-        <AssetGrid assets={tdAssets} loading={loadingTD} flipped={flipped} flashMap={flashMap} onFlip={toggleFlip} fmtInverted={fmtInverted} getMarketStatus={getMarketStatus} />
+        <AssetGrid columns={3} assets={[...indicesAssets, ...cryptoAssets]} loading={loadingTD && loadingBinance} flashMap={flashMap} getMarketStatus={getMarketStatus} candleData={candles} />
       </div>
 
     </div>
   )
 }
 
-function UsdtPegIndicator({ peg }) {
-  if (peg == null) return null
-  const dev = Math.abs(peg - 1) * 100
-  const color = dev < 0.1 ? NEON_GREEN : dev < 0.5 ? '#f4c542' : NEON_PINK
-  const label = dev < 0.1 ? null : dev < 0.5 ? 'Légère déviation' : 'Dépeg détecté'
-  return (
-    <div style={{
-      display: 'inline-flex', alignItems: 'center', gap: '0.6rem',
-      padding: '0.45rem 0.9rem',
-      background: `${color}0d`,
-      border: `1px solid ${color}33`,
-      borderRadius: '99px',
-      alignSelf: 'flex-start',
-    }}>
-      <span style={{
-        width: '7px', height: '7px', borderRadius: '50%',
-        background: color, boxShadow: `0 0 6px ${color}`,
-        flexShrink: 0,
-      }} />
-      <span style={{ fontFamily: MONO, fontSize: '0.72rem', color, letterSpacing: '0.04em' }}>
-        USDT
-      </span>
-      <span style={{ fontFamily: MONO, fontSize: '0.78rem', fontWeight: 700, color, letterSpacing: '-0.01em' }}>
-        ${peg.toFixed(4)}
-      </span>
-      {label && (
-        <span style={{ fontFamily: FONT, fontSize: '0.68rem', color: `${color}99`, letterSpacing: '0.03em' }}>
-          {label}
-        </span>
-      )}
-    </div>
-  )
-}
 
 function FearGreedWidget({ fearGreed }) {
   const getFGColor = (v) => {
@@ -596,42 +524,46 @@ function FearGreedWidget({ fearGreed }) {
   }
   if (fearGreed == null) return null
 
+  const FG_FR = { 'Extreme Fear': 'Peur extrême', 'Fear': 'Peur', 'Neutral': 'Neutre', 'Greed': 'Avidité', 'Extreme Greed': 'Avidité extrême' }
   const { value, label } = fearGreed
+  const labelFr = FG_FR[label] ?? label
   const color  = getFGColor(value)
   const arcDeg = (value / 100) * 180
 
+  const rad = ((arcDeg - 180) * Math.PI) / 180
+
   return (
     <div style={{
-      display: 'inline-flex', alignItems: 'center', gap: '0.6rem',
-      padding: '0.45rem 0.9rem',
-      background: `${color}0d`,
-      border: `1px solid ${color}33`,
-      borderRadius: '99px',
-      alignSelf: 'flex-start',
+      height: '100%', position: 'relative',
+      display: 'flex', flexDirection: 'column',
+      alignItems: 'center', justifyContent: 'center',
+      padding: '1rem 1.5rem', gap: '0.4rem',
+      background: `${color}08`,
     }}>
-      {/* Mini gauge */}
-      <svg width="44" height="24" viewBox="0 0 72 38" style={{ overflow: 'visible', flexShrink: 0 }}>
-        <path d="M 4 36 A 32 32 0 0 1 68 36" fill="none" stroke="rgba(196,79,255,0.2)" strokeWidth="6" strokeLinecap="round" />
-        <path
-          d="M 4 36 A 32 32 0 0 1 68 36"
-          fill="none" stroke={color} strokeWidth="6" strokeLinecap="round"
-          strokeDasharray={`${arcDeg * (100 / 180)} 200`}
-          style={{ filter: `drop-shadow(0 0 3px ${color}88)`, transition: 'stroke-dasharray 0.8s ease' }}
+      <div style={{ position: 'absolute', top: '0.75rem', right: '0.75rem' }}>
+        <InfoTooltip text={[{ label: 'Source', value: 'Alternative.me' }, { label: 'Échelle', value: '0 – 100' }, { label: '0 – 24', value: 'Peur extrême' }, { label: '25 – 44', value: 'Peur' }, { label: '45 – 54', value: 'Neutre' }, { label: '55 – 74', value: 'Avidité' }, { label: '75 – 100', value: 'Avidité extrême' }]} />
+      </div>
+      <p style={{ ...labelSt, marginBottom: 0 }}>Cryptos Fear & Greed</p>
+      <svg width="100%" viewBox="0 0 120 66" preserveAspectRatio="xMidYMid meet"
+        style={{ overflow: 'visible', maxWidth: '200px' }}>
+        <path d="M 8 60 A 52 52 0 0 1 112 60" fill="none" stroke="rgba(196,79,255,0.15)" strokeWidth="10" strokeLinecap="round" />
+        <path d="M 8 60 A 52 52 0 0 1 112 60"
+          fill="none" stroke={color} strokeWidth="10" strokeLinecap="round"
+          strokeDasharray={`${arcDeg * (163 / 180)} 400`}
+          style={{ filter: `drop-shadow(0 0 5px ${color}88)`, transition: 'stroke-dasharray 0.8s ease' }}
         />
-        {(() => {
-          const rad = ((arcDeg - 180) * Math.PI) / 180
-          return <circle cx={36 + 32 * Math.cos(rad)} cy={36 + 32 * Math.sin(rad)} r="5" fill={color} style={{ filter: `drop-shadow(0 0 4px ${color})` }} />
-        })()}
+        <circle
+          cx={60 + 52 * Math.cos(rad)} cy={60 + 52 * Math.sin(rad)}
+          r="7" fill={color}
+          style={{ filter: `drop-shadow(0 0 6px ${color})` }}
+        />
       </svg>
-      {/* Score */}
-      <span style={{ fontFamily: MONO, fontSize: '0.85rem', fontWeight: 800, color, letterSpacing: '-0.01em' }}>
+      <span style={{ fontFamily: MONO, fontSize: '2.2rem', fontWeight: 800, color, letterSpacing: '-0.03em', lineHeight: 1 }}>
         {value}
       </span>
-      {/* Label */}
-      <span style={{ fontFamily: FONT, fontSize: '0.72rem', fontWeight: 600, color: `${color}cc`, letterSpacing: '0.03em' }}>
-        {label}
+      <span style={{ fontFamily: FONT, fontSize: '0.88rem', fontWeight: 600, color: `${color}cc`, letterSpacing: '0.04em' }}>
+        {labelFr}
       </span>
-      <InfoTooltip text="L'indice Fear & Greed mesure le sentiment global du marché crypto sur une échelle de 0 à 100. En dessous de 25 : peur extrême — les investisseurs paniquent, ce qui peut indiquer une opportunité d'achat. Au-dessus de 75 : avidité extrême — le marché est euphorique, risque de correction élevé. Entre les deux : sentiment neutre à positif. À utiliser comme signal de contexte, pas comme signal d'entrée seul." />
     </div>
   )
 }
@@ -651,50 +583,48 @@ function fmtVol(v) {
   return `$${v.toFixed(0)}`
 }
 
-function AssetGrid({ assets, loading, flipped, flashMap, onFlip, fmtInverted, getMarketStatus }) {
+function AssetGrid({ assets, loading, flashMap, getMarketStatus, candleData, columns = 3 }) {
+  const isNarrow = useIsMobile(700)
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '0.7rem' }}>
+    <div style={{ display: 'grid', gridTemplateColumns: isNarrow ? '1fr' : `repeat(${columns}, 1fr)`, gap: '0.7rem' }}>
       {assets.map((a) => {
-        const isFlipped     = !!flipped[a.symbol]
-        const displaySymbol = isFlipped ? a.flipSymbol : a.symbol
-        const displayPrice  = isFlipped ? fmtInverted(a.rawPrice) : (a.price ?? '—')
-        const displayChange = a.change != null ? (isFlipped ? -a.change : a.change) : null
+        const displayChange = a.change ?? null
         const open          = a.market ? getMarketStatus(a.market) : null
         const tintColor     = displayChange == null ? null : displayChange >= 0 ? NEON_GREEN : NEON_PINK
-        const hasBar        = a.high != null && a.low != null && a.rawNum != null && a.high > a.low
-        const barPct        = hasBar ? Math.min(100, Math.max(0, (a.rawNum - a.low) / (a.high - a.low) * 100)) : 0
-        const volFmt        = fmtVol(a.volume)
+        const rawCandles    = candleData?.[a.flashKey]
+        const chartCandles  = rawCandles && a.invertCandles
+          ? rawCandles.map(c => ({ open: 1/c.open, high: 1/c.low, low: 1/c.high, close: 1/c.close }))
+          : rawCandles
         return (
           <div key={a.symbol} style={{
             background: tintColor ? `${tintColor}08` : 'rgba(196,79,255,0.03)',
             border: `1px solid ${tintColor ? `${tintColor}22` : BORDER}`,
             borderLeft: `3px solid ${a.color}`,
             borderRadius: '10px',
-            padding: '1rem 1.1rem',
-            display: 'flex', flexDirection: 'column', gap: '0.55rem',
+            padding: '1.25rem 1.4rem',
+            display: 'flex', flexDirection: 'column', gap: '0.75rem',
             transition: 'background 0.4s, border-color 0.4s',
           }}>
-            {/* Header row */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-              <span style={{ fontFamily: FONT, fontSize: '0.66rem', fontWeight: 700, color: a.color, letterSpacing: '0.05em', flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                {displaySymbol}
+            {/* Header row — symbol + market status dot + info tooltip */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+              <span style={{ fontFamily: FONT, fontSize: '0.82rem', fontWeight: 700, color: a.color, letterSpacing: '0.05em', flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {a.symbol}
               </span>
-              <InfoTooltip text={a.info} />
-              {a.flipSymbol && (
-                <button
-                  onClick={() => onFlip(a.symbol)}
-                  title="Inverser la paire"
-                  style={{
-                    fontFamily: FONT, fontSize: '0.65rem',
-                    color: isFlipped ? a.color : TEXT_DIM,
-                    background: 'none', border: 'none',
-                    cursor: 'pointer', padding: 0, lineHeight: 1,
-                    transition: 'color 0.15s', flexShrink: 0,
-                  }}
-                  onMouseEnter={(e) => (e.currentTarget.style.color = a.color)}
-                  onMouseLeave={(e) => (e.currentTarget.style.color = isFlipped ? a.color : TEXT_DIM)}
-                >⇄</button>
+              {open !== null && (
+                <span style={{
+                  fontFamily: FONT, fontSize: '0.6rem', fontWeight: 700, letterSpacing: '0.06em',
+                  color: open ? NEON_GREEN : TEXT_DIM,
+                  display: 'flex', alignItems: 'center', gap: '0.2rem', flexShrink: 0,
+                }}>
+                  <span style={{
+                    width: '4px', height: '4px', borderRadius: '50%',
+                    background: open ? NEON_GREEN : 'rgba(196,79,255,0.2)',
+                    boxShadow: open ? `0 0 4px ${NEON_GREEN}` : 'none',
+                  }} />
+                  {open ? 'OUVERT' : 'FERMÉ'}
+                </span>
               )}
+              <InfoTooltip text={a.info} />
             </div>
 
             {/* Price + change */}
@@ -703,14 +633,14 @@ function AssetGrid({ assets, loading, flipped, flashMap, onFlip, fmtInverted, ge
             ) : (
               <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.4rem', flexWrap: 'wrap' }}>
                 <span style={{
-                  fontFamily: MONO, fontSize: '1.35rem', fontWeight: 700, color: TEXT, letterSpacing: '-0.02em',
+                  fontFamily: MONO, fontSize: '1.75rem', fontWeight: 700, color: TEXT, letterSpacing: '-0.02em',
                   animation: flashMap[a.flashKey] ? `price${flashMap[a.flashKey] === 'up' ? 'Up' : 'Down'} 0.9s ease-out forwards` : 'none',
                 }}>
-                  {displayPrice}
+                  {a.price ?? '—'}
                 </span>
                 {displayChange != null && (
                   <span style={{
-                    fontFamily: FONT, fontSize: '0.75rem', fontWeight: 700,
+                    fontFamily: FONT, fontSize: '0.88rem', fontWeight: 700,
                     color: displayChange >= 0 ? NEON_GREEN : NEON_PINK,
                     textShadow: displayChange >= 0 ? `0 0 8px ${NEON_GREEN}66` : `0 0 8px ${NEON_PINK}66`,
                   }}>
@@ -720,50 +650,7 @@ function AssetGrid({ assets, loading, flipped, flashMap, onFlip, fmtInverted, ge
               </div>
             )}
 
-            {/* High/Low bar */}
-            {!loading && hasBar && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-                <div style={{ position: 'relative', height: '3px', background: 'rgba(196,79,255,0.15)', borderRadius: '99px', overflow: 'hidden' }}>
-                  <div style={{
-                    position: 'absolute', left: 0,
-                    width: `${barPct}%`, height: '100%',
-                    background: `linear-gradient(90deg, ${a.color}55, ${a.color})`,
-                    borderRadius: '99px',
-                    transition: 'width 0.4s ease',
-                  }} />
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <span style={{ fontFamily: MONO, fontSize: '0.55rem', color: TEXT_DIM }}>L {fmtHL(a.low)}</span>
-                  <span style={{ fontFamily: MONO, fontSize: '0.55rem', color: TEXT_DIM }}>H {fmtHL(a.high)}</span>
-                </div>
-              </div>
-            )}
-
-            {/* Name + market status + volume */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.3rem' }}>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.15rem', minWidth: 0 }}>
-                <span style={{ fontFamily: FONT, fontSize: '0.63rem', color: TEXT_DIM }}>{a.name}</span>
-                {!loading && volFmt && (
-                  <span style={{ fontFamily: MONO, fontSize: '0.55rem', color: 'rgba(245,230,255,0.25)', letterSpacing: '0.02em' }}>
-                    Vol {volFmt}
-                  </span>
-                )}
-              </div>
-              {open !== null && (
-                <span style={{
-                  fontFamily: FONT, fontSize: '0.52rem', fontWeight: 700, letterSpacing: '0.06em',
-                  color: open ? NEON_GREEN : TEXT_DIM,
-                  display: 'flex', alignItems: 'center', gap: '0.2rem', flexShrink: 0,
-                }}>
-                  <span style={{
-                    width: '4px', height: '4px', borderRadius: '50%',
-                    background: open ? NEON_GREEN : 'rgba(196,79,255,0.3)',
-                    boxShadow: open ? `0 0 4px ${NEON_GREEN}` : 'none',
-                  }} />
-                  {open ? 'OUVERT' : 'FERMÉ'}
-                </span>
-              )}
-            </div>
+            {chartCandles && <MiniCandleChart data={chartCandles} />}
           </div>
         )
       })}
@@ -829,133 +716,68 @@ function getTimeUntilOpen(localOpen, timezone) {
 function SessionsWidget() {
   const [, setTick] = useState(0)
   useEffect(() => {
-    const id = setInterval(() => setTick((t) => t + 1), 30000)
+    const id = setInterval(() => setTick(t => t + 1), 30000)
     return () => clearInterval(id)
   }, [])
 
   return (
-    <div style={{ padding: '1rem 1.5rem', flex: 1, overflowY: 'auto' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 0 }}>
-        <p style={{ ...labelSt, marginBottom: 0 }}>Marchés</p>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-          <span style={{ fontFamily: FONT, fontSize: '0.5rem', color: 'rgba(245,230,255,0.25)', letterSpacing: '0.04em' }}>heure locale</span>
-          <span style={{ width: '1px', height: '0.75rem', background: 'rgba(196,79,255,0.4)', flexShrink: 0 }} />
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-            <span style={{ fontFamily: FONT, fontSize: '0.5rem', color: 'rgba(245,230,255,0.25)', letterSpacing: '0.04em' }}>UTC+2</span>
-            <span style={{ fontFamily: MONO, fontSize: '0.7rem', fontWeight: 700, color: NEON_CYAN }}>
-              {getLocalTime('Europe/Brussels')}
-            </span>
-          </div>
+    <div style={{ padding: '1.25rem 1.5rem', overflowY: 'auto' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.1rem' }}>
+        <p style={{ ...labelSt, marginBottom: 0 }}>Kill Zones</p>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+          <span style={{ fontFamily: FONT, fontSize: '0.65rem', color: 'rgba(245,230,255,0.25)', letterSpacing: '0.04em' }}>UTC+2</span>
+          <span style={{ fontFamily: MONO, fontSize: '0.95rem', fontWeight: 700, color: NEON_CYAN }}>
+            {getLocalTime('Europe/Brussels')}
+          </span>
         </div>
       </div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-        {['asia', 'europe', 'america'].map(region => (
-          <div key={region}>
-            <p style={{ ...labelSt, fontSize: '0.55rem', opacity: 0.45, marginBottom: '0.5rem' }}>
-              {REGION_LABELS[region]}
-            </p>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
-              {SESSIONS.filter(s => s.region === region).map(s => {
-                const open     = isSessionOpen(s.localOpen, s.localClose, s.timezone)
-                const progress = open ? getSessionProgress(s.localOpen, s.localClose, s.timezone) : 0
-                const label    = open
-                  ? `ferme dans ${getTimeUntilClose(s.localClose, s.timezone)}`
-                  : `ouvre dans ${getTimeUntilOpen(s.localOpen, s.timezone)}`
-                const beOpen   = toBeTime(s.localOpen, s.timezone)
-                const beClose  = toBeTime(s.localClose, s.timezone)
-                return (
-                  <div key={s.name}>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem', marginBottom: '0.25rem' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', flex: 1, minWidth: 0 }}>
-                        <div style={{
-                          width: '5px', height: '5px', borderRadius: '50%', flexShrink: 0,
-                          background: open ? NEON_GREEN : 'rgba(196,79,255,0.2)',
-                          boxShadow: open ? `0 0 5px ${NEON_GREEN}, 0 0 10px ${NEON_GREEN}55` : 'none',
-                          transition: 'all 0.4s',
-                        }} />
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.05rem', minWidth: 0 }}>
-                          <span style={{ fontFamily: FONT, fontSize: '0.72rem', fontWeight: 600, color: open ? TEXT : TEXT_DIM }}>
-                            {s.name}
-                          </span>
-                          <span style={{ fontFamily: FONT, fontSize: '0.55rem', color: open ? `${NEON_GREEN}99` : TEXT_DIM }}>
-                            {label}
-                          </span>
-                        </div>
-                      </div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexShrink: 0 }}>
-                        <span style={{ fontFamily: MONO, fontSize: '0.72rem', fontWeight: 700, color: open ? TEXT : TEXT_DIM }}>
-                          {getLocalTime(s.timezone)}
-                        </span>
-                        <span style={{ width: '1px', height: '1rem', background: 'rgba(196,79,255,0.4)', flexShrink: 0 }} />
-                        <span style={{ fontFamily: MONO, fontSize: '0.62rem', fontWeight: 500, color: open ? `${NEON_GREEN}cc` : `${NEON_PINK}77`, whiteSpace: 'nowrap' }}>
-                          {beOpen}–{beClose}
-                        </span>
-                      </div>
-                    </div>
-                    <div style={{ height: '2px', background: 'rgba(196,79,255,0.1)', borderRadius: '99px', overflow: 'hidden' }}>
-                      {open && (
-                        <div style={{
-                          height: '100%',
-                          width: `${progress}%`,
-                          background: `linear-gradient(90deg, ${NEON_GREEN}55, ${NEON_GREEN})`,
-                          borderRadius: '99px',
-                          boxShadow: `0 0 5px ${NEON_GREEN}66`,
-                          transition: 'width 1s ease',
-                        }} />
-                      )}
-                    </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '1.4rem' }}>
+        {KILL_ZONES.map(kz => {
+          const open     = isSessionOpen(kz.localOpen, kz.localClose, KZ_TZ)
+          const progress = open ? getSessionProgress(kz.localOpen, kz.localClose, KZ_TZ) : 0
+          const sublabel = open
+            ? `ferme dans ${getTimeUntilClose(kz.localClose, KZ_TZ)}`
+            : `ouvre dans ${getTimeUntilOpen(kz.localOpen, KZ_TZ)}`
+          const beOpen  = toBeTime(kz.localOpen, KZ_TZ)
+          const beClose = toBeTime(kz.localClose, KZ_TZ)
+          return (
+            <div key={kz.name}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem', marginBottom: '0.4rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.55rem' }}>
+                  <div style={{
+                    width: '8px', height: '8px', borderRadius: '50%', flexShrink: 0,
+                    background: open ? kz.color : 'rgba(196,79,255,0.2)',
+                    boxShadow: open ? `0 0 6px ${kz.color}, 0 0 12px ${kz.color}55` : 'none',
+                    transition: 'all 0.4s',
+                  }} />
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.1rem' }}>
+                    <span style={{ fontFamily: FONT, fontSize: '1rem', fontWeight: 700, color: open ? kz.color : TEXT_DIM }}>
+                      {kz.name}
+                    </span>
+                    <span style={{ fontFamily: FONT, fontSize: '0.75rem', color: open ? `${kz.color}99` : TEXT_DIM }}>
+                      {sublabel}
+                    </span>
                   </div>
-                )
-              })}
+                </div>
+                <span style={{ fontFamily: MONO, fontSize: '0.88rem', fontWeight: 600, color: open ? `${kz.color}cc` : TEXT_DIM, whiteSpace: 'nowrap', flexShrink: 0 }}>
+                  {beOpen} – {beClose}
+                </span>
+              </div>
+              <div style={{ height: '2px', background: 'rgba(196,79,255,0.1)', borderRadius: '99px', overflow: 'hidden' }}>
+                {open && (
+                  <div style={{
+                    height: '100%', width: `${progress}%`,
+                    background: `linear-gradient(90deg, ${kz.color}55, ${kz.color})`,
+                    borderRadius: '99px',
+                    boxShadow: `0 0 5px ${kz.color}66`,
+                    transition: 'width 1s ease',
+                  }} />
+                )}
+              </div>
             </div>
-          </div>
-        ))}
+          )
+        })}
       </div>
-    </div>
-  )
-}
-
-// ─── Rotating rules ───────────────────────────────────────────────────────────
-
-function RulesWidget() {
-  const [idx, setIdx]         = useState(0)
-  const [visible, setVisible] = useState(true)
-
-  const advance = (nextIdx) => {
-    setVisible(false)
-    setTimeout(() => { setIdx(nextIdx ?? ((i) => (i + 1) % RULES.length)); setVisible(true) }, 300)
-  }
-
-  useEffect(() => {
-    const id = setInterval(() => advance(), 15000)
-    return () => clearInterval(id)
-  }, [])
-
-  return (
-    <div style={{ padding: '0.65rem 1.25rem', display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <p style={{ ...labelSt, marginBottom: 0, fontSize: '0.6rem', opacity: 0.6 }}>Astuce</p>
-        <button
-          onClick={() => advance()}
-          style={{
-            fontFamily: FONT, fontSize: '0.6rem', color: TEXT_DIM,
-            background: 'none', border: 'none', cursor: 'pointer', padding: 0, transition: 'color 0.12s',
-          }}
-          onMouseEnter={(e) => (e.currentTarget.style.color = TEXT)}
-          onMouseLeave={(e) => (e.currentTarget.style.color = TEXT_DIM)}
-        >
-          → suiv.
-        </button>
-      </div>
-      <p style={{
-        fontFamily: FONT, fontSize: '0.73rem', fontWeight: 500,
-        color: TEXT, lineHeight: 1.5, fontStyle: 'italic',
-        opacity: visible ? 1 : 0,
-        transition: 'opacity 0.3s ease',
-        margin: 0,
-      }}>
-        "{RULES[idx]}"
-      </p>
     </div>
   )
 }
@@ -1023,7 +845,7 @@ function CalendarWidget() {
           {[['High', NEON_PINK, 'Fort'], ['Medium', '#f4c542', 'Modéré'], ['Low', TEXT_DIM, 'Faible']].map(([label, color, desc]) => (
             <div key={label} style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
               <div style={{ width: '7px', height: '7px', borderRadius: '2px', background: color, boxShadow: label === 'High' ? `0 0 5px ${color}88` : 'none' }} />
-              <span style={{ fontFamily: FONT, fontSize: '0.58rem', color: TEXT_DIM }}>{desc}</span>
+              <span style={{ fontFamily: FONT, fontSize: '0.68rem', color: TEXT_DIM }}>{desc}</span>
             </div>
           ))}
         </div>
@@ -1035,7 +857,7 @@ function CalendarWidget() {
           {[1,2,3].map(i => <div key={i} style={{ height: '2rem', background: 'rgba(196,79,255,0.06)', borderRadius: '6px' }} />)}
         </div>
       ) : !expanded && preview.length === 0 ? (
-        <p style={{ fontFamily: FONT, fontSize: '0.72rem', color: TEXT_DIM, fontStyle: 'italic' }}>
+        <p style={{ fontFamily: FONT, fontSize: '0.82rem', color: TEXT_DIM, fontStyle: 'italic' }}>
           Aucun événement à venir aujourd'hui.
         </p>
       ) : !expanded ? (
@@ -1049,7 +871,7 @@ function CalendarWidget() {
         <button
           onClick={() => setExpanded(x => !x)}
           style={{
-            fontFamily: FONT, fontSize: '0.65rem', fontWeight: 600,
+            fontFamily: FONT, fontSize: '0.74rem', fontWeight: 600,
             color: TEXT_DIM, background: 'rgba(196,79,255,0.05)',
             border: `1px solid ${BORDER}`, borderRadius: '8px',
             padding: '0.4rem', cursor: 'pointer',
@@ -1071,7 +893,7 @@ function CalendarWidget() {
           <div style={{ display: 'flex', gap: '0.4rem' }}>
             {[['upcoming', `À venir (${upcoming.length})`], ['past', `Passés (${past.length})`], ['all', `Tout (${events.length})`]].map(([key, label]) => (
               <button key={key} onClick={() => setTab(key)} style={{
-                fontFamily: FONT, fontSize: '0.65rem', fontWeight: 600,
+                fontFamily: FONT, fontSize: '0.74rem', fontWeight: 600,
                 color: tab === key ? NEON_CYAN : TEXT_DIM,
                 background: tab === key ? `${NEON_CYAN}12` : 'transparent',
                 border: `1px solid ${tab === key ? `${NEON_CYAN}44` : BORDER}`,
@@ -1083,7 +905,7 @@ function CalendarWidget() {
           {/* List */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
             {tabList.length === 0 ? (
-              <p style={{ fontFamily: FONT, fontSize: '0.7rem', color: TEXT_DIM, fontStyle: 'italic' }}>Aucun événement.</p>
+              <p style={{ fontFamily: FONT, fontSize: '0.8rem', color: TEXT_DIM, fontStyle: 'italic' }}>Aucun événement.</p>
             ) : tabList.map((e, i) => (
               <EventRow key={i} e={e} fmtTime={fmtTime} isReleased={isReleased} isPast={isPast} />
             ))}
@@ -1104,7 +926,7 @@ function EventRow({ e, fmtTime, isReleased, isPast }) {
     <div style={{
       display: 'grid', gridTemplateColumns: '3rem 2.5rem 1fr auto',
       alignItems: 'center', gap: '0.65rem',
-      padding: '0.45rem 0.75rem',
+      padding: '0.6rem 0.9rem',
       background: past ? 'rgba(196,79,255,0.03)' : isHigh ? `${impactCol}12` : `${impactCol}06`,
       border: `1px solid ${past ? BORDER : impactCol + (isHigh ? '44' : '22')}`,
       borderLeft: `3px solid ${impactCol}`,
@@ -1112,22 +934,22 @@ function EventRow({ e, fmtTime, isReleased, isPast }) {
       opacity: past && !released ? 0.4 : 1,
       boxShadow: !past && isHigh ? `0 0 10px ${impactCol}18` : 'none',
     }}>
-      <span style={{ fontFamily: MONO, fontSize: '0.63rem', color: past ? TEXT_DIM : isHigh ? TEXT : TEXT_DIM }}>
+      <span style={{ fontFamily: MONO, fontSize: '0.74rem', color: past ? TEXT_DIM : isHigh ? TEXT : TEXT_DIM }}>
         {fmtTime(e.date)}
       </span>
-      <span style={{ fontFamily: MONO, fontSize: '0.63rem', fontWeight: 700, color: currCol }}>
+      <span style={{ fontFamily: MONO, fontSize: '0.74rem', fontWeight: 700, color: currCol }}>
         {e.country}
       </span>
-      <span style={{ fontFamily: FONT, fontSize: '0.68rem', fontWeight: isHigh ? 600 : 500, color: past ? TEXT_DIM : isHigh ? TEXT : `${TEXT}bb`, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+      <span style={{ fontFamily: FONT, fontSize: '0.8rem', fontWeight: isHigh ? 600 : 500, color: past ? TEXT_DIM : isHigh ? TEXT : `${TEXT}bb`, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
         {e.title}
       </span>
       <div style={{ flexShrink: 0 }}>
         {released ? (
-          <span style={{ fontFamily: MONO, fontSize: '0.65rem', fontWeight: 700, color: impactCol, textShadow: isHigh ? `0 0 8px ${impactCol}88` : 'none' }}>
+          <span style={{ fontFamily: MONO, fontSize: '0.74rem', fontWeight: 700, color: impactCol, textShadow: isHigh ? `0 0 8px ${impactCol}88` : 'none' }}>
             {e.actual}
           </span>
         ) : e.forecast ? (
-          <span style={{ fontFamily: MONO, fontSize: '0.6rem', color: TEXT_DIM }}>
+          <span style={{ fontFamily: MONO, fontSize: '0.68rem', color: TEXT_DIM }}>
             prev. {e.forecast}
           </span>
         ) : null}
@@ -1241,7 +1063,7 @@ function BasicCalcWidget() {
     return 'rgba(196,79,255,0.05)'
   }
 
-  const fontSize = display.length > 8 ? '0.9rem' : display.length > 5 ? '1.1rem' : '1.3rem'
+  const fontSize = display.length > 8 ? '1.1rem' : display.length > 5 ? '1.3rem' : '1.5rem'
 
   return (
     <div style={{ padding: '1.1rem 1.2rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
@@ -1268,12 +1090,12 @@ function BasicCalcWidget() {
             onClick={b.onPress}
             style={{
               gridColumn: b.span ? `span ${b.span}` : undefined,
-              fontFamily: MONO, fontSize: '0.82rem', fontWeight: 600,
+              fontFamily: MONO, fontSize: '0.92rem', fontWeight: 600,
               color: btnColor(b.type),
               background: btnBg(b.type),
               border: `1px solid ${b.type === 'eq' ? `${NEON_CYAN}33` : b.type === 'op' ? `${NEON_PURP}22` : BORDER}`,
               borderRadius: '6px',
-              padding: '0.42rem 0',
+              padding: '0.55rem 0',
               cursor: 'pointer',
               transition: 'background 0.12s, box-shadow 0.12s',
             }}
@@ -1294,14 +1116,79 @@ function BasicCalcWidget() {
   )
 }
 
+// ─── Mini Candle Chart ────────────────────────────────────────────────────────
+
+function MiniCandleChart({ data }) {
+  if (!data?.length) return null
+  const W = 112
+  const H = 68
+  const candleW = 10
+  const gap = 4
+  const n = data.length
+
+  const allLows  = data.map(c => c.low)
+  const allHighs = data.map(c => c.high)
+  const minP = Math.min(...allLows)
+  const maxP = Math.max(...allHighs)
+  const range = maxP - minP || 1
+
+  const scaleY = p => H - 2 - ((p - minP) / range) * (H - 4)
+
+  const totalW = n * candleW + (n - 1) * gap
+  const offsetX = (W - totalW) / 2
+
+  return (
+    <svg
+      width="100%" height={H}
+      viewBox={`0 0 ${W} ${H}`}
+      preserveAspectRatio="xMidYMid meet"
+      style={{ display: 'block', marginTop: '0.35rem' }}
+    >
+      {data.map((c, i) => {
+        const x    = offsetX + i * (candleW + gap)
+        const cx   = x + candleW / 2
+        const bull = c.close >= c.open
+        const col  = bull ? NEON_GREEN : NEON_PINK
+        const bodyTop    = scaleY(Math.max(c.open, c.close))
+        const bodyBot    = scaleY(Math.min(c.open, c.close))
+        const bodyH      = Math.max(1, bodyBot - bodyTop)
+        return (
+          <g key={i}>
+            <line x1={cx} y1={scaleY(c.high)} x2={cx} y2={scaleY(c.low)}
+              stroke={col} strokeWidth="1" opacity="0.45" />
+            <rect x={x} y={bodyTop} width={candleW} height={bodyH}
+              fill={col} opacity="0.82" rx="1" />
+          </g>
+        )
+      })}
+    </svg>
+  )
+}
+
 // ─── Shared helpers ───────────────────────────────────────────────────────────
 
 function InfoTooltip({ text }) {
   const [show, setShow] = useState(false)
+  const [pos, setPos] = useState({ top: 0, left: 0 })
+  const triggerRef = useRef(null)
+
+  function handleEnter() {
+    if (triggerRef.current) {
+      const r = triggerRef.current.getBoundingClientRect()
+      const tooltipW = 220
+      const margin = 8
+      const rawLeft = r.left + r.width / 2 - tooltipW / 2
+      const clampedLeft = Math.max(margin, Math.min(rawLeft, window.innerWidth - tooltipW - margin))
+      setPos({ top: r.bottom + 8, left: clampedLeft })
+    }
+    setShow(true)
+  }
+
   return (
     <div style={{ position: 'relative', display: 'inline-block', flexShrink: 0 }}>
       <div
-        onMouseEnter={() => setShow(true)}
+        ref={triggerRef}
+        onMouseEnter={handleEnter}
         onMouseLeave={() => setShow(false)}
         style={{
           width: '14px', height: '14px', borderRadius: '50%',
@@ -1313,23 +1200,36 @@ function InfoTooltip({ text }) {
       >
         ?
       </div>
-      {show && (
+      {show && createPortal(
         <div style={{
-          position: 'absolute',
-          top: '120%', left: 0,
-          background: '#150025',
-          border: `1px solid ${BORDER}`,
+          position: 'fixed',
+          top: pos.top,
+          left: pos.left,
+          background: '#1e0035',
+          border: `1px solid rgba(196,79,255,0.3)`,
           borderRadius: '8px',
-          padding: '0.65rem 0.8rem',
-          width: '200px',
-          zIndex: 100,
-          boxShadow: `0 4px 24px rgba(0,0,0,0.6), 0 0 0 1px ${BORDER}`,
+          padding: '0.75rem 0.9rem',
+          width: '220px',
+          zIndex: 9999,
+          boxShadow: `0 4px 24px rgba(0,0,0,0.7)`,
           pointerEvents: 'none',
         }}>
-          <p style={{ fontFamily: FONT, fontSize: '0.72rem', color: TEXT_DIM, lineHeight: 1.55, margin: 0 }}>
-            {text}
-          </p>
-        </div>
+          {Array.isArray(text) ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+              {text.map(({ label, value }, i) => (
+                <div key={i} style={{ display: 'flex', justifyContent: 'space-between', gap: '0.75rem' }}>
+                  <span style={{ fontFamily: FONT, fontSize: '0.75rem', color: 'rgba(245,230,255,0.4)', whiteSpace: 'nowrap' }}>{label}</span>
+                  <span style={{ fontFamily: MONO, fontSize: '0.75rem', color: 'rgba(245,230,255,0.9)', textAlign: 'right' }}>{value}</span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p style={{ fontFamily: FONT, fontSize: '0.8rem', color: 'rgba(245,230,255,0.8)', lineHeight: 1.6, margin: 0 }}>
+              {text}
+            </p>
+          )}
+        </div>,
+        document.body
       )}
     </div>
   )

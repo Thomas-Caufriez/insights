@@ -195,15 +195,7 @@ export default function App() {
         position: 'fixed', top: 0, left: sidebarOpen ? 0 : '-240px',
         bottom: 0, zIndex: 20, transition: 'left 0.25s ease',
       } : {}}>
-        {isTrading ? (
-          <TradingSidebar
-            filterId={filterId}
-            onFilter={handleFilter}
-            onHome={handleHome}
-            isMobile={isMobile}
-            onClose={() => setSidebarOpen(false)}
-          />
-        ) : isMusculation ? (
+        {isMusculation ? (
           <MuscuSidebar
             filterId={filterId}
             onFilter={handleFilter}
