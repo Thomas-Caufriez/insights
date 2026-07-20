@@ -1,19 +1,18 @@
 import { useState } from 'react'
 import { tradingCategories } from './data'
 
-const NEON_GREEN = '#00ff88'
-const NEON_PINK  = '#ff2d78'
-const NEON_CYAN  = '#00f5ff'
-const NEON_PURP  = '#c44fff'
-const ACCENT     = NEON_CYAN
-const BG         = '#09000f'
-const CARD_BG    = '#0e0018'
-const CARD_HOV   = '#160025'
-const TEXT       = '#f5e6ff'
-const TEXT_DIM   = 'rgba(245,230,255,0.4)'
-const BORDER     = 'rgba(196,79,255,0.15)'
-const FONT       = '"Plus Jakarta Sans", sans-serif'
-const MONO       = '"Space Mono", monospace'
+const ACCENT   = '#00f5ff'
+const CARD_BG  = '#0e0018'   // used by card hover handlers (runtime, not Tailwind)
+const CARD_HOV = '#160025'
+
+// Fixed decorative grid pattern — kept inline (multi-gradient background)
+const GRID_BG = {
+  backgroundImage: `
+    linear-gradient(rgba(196,79,255,0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(196,79,255,0.04) 1px, transparent 1px)
+  `,
+  backgroundSize: '40px 40px',
+}
 
 export default function TradingGrid({ entries, filterId, onSelect, isMobile, onBack }) {
   const [search, setSearch] = useState('')
@@ -30,54 +29,33 @@ export default function TradingGrid({ entries, filterId, onSelect, isMobile, onB
     : filtered
 
   return (
-    <div style={{
-      height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden',
-      background: BG,
-      backgroundImage: `
-        linear-gradient(rgba(196,79,255,0.04) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(196,79,255,0.04) 1px, transparent 1px)
-      `,
-      backgroundSize: '40px 40px',
-    }}>
+    <div
+      className="h-full flex flex-col overflow-hidden bg-tr-bg"
+      style={{ '--c': color, '--c-88': `${color}88`, ...GRID_BG }}
+    >
 
       {/* Header */}
-      <div style={{
-        padding: isMobile ? '0.9rem 1.25rem' : '0.9rem 2rem',
-        borderBottom: `1px solid ${BORDER}`,
-        flexShrink: 0,
-        display: 'flex', alignItems: 'center', gap: '0.75rem',
-      }}>
+      <div className={`${isMobile ? 'px-5' : 'px-8'} py-[0.9rem] border-b border-tr-border flex-shrink-0 flex items-center gap-3`}>
         <button
           onClick={onBack}
-          style={{
-            fontFamily: FONT, fontSize: '0.7rem', fontWeight: 500,
-            color: TEXT_DIM, background: 'none', border: 'none',
-            cursor: 'pointer', padding: 0, transition: 'color 0.12s', flexShrink: 0,
-          }}
-          onMouseEnter={(e) => (e.currentTarget.style.color = TEXT)}
-          onMouseLeave={(e) => (e.currentTarget.style.color = TEXT_DIM)}
+          className="font-jakarta text-[0.7rem] font-medium text-tr-dim hover:text-tr-text bg-transparent border-none cursor-pointer p-0 transition-colors flex-shrink-0"
         >
           ← Trading
         </button>
 
-        <div style={{ width: '1px', height: '14px', background: BORDER, flexShrink: 0 }} />
+        <div className="w-px h-[14px] bg-tr-border flex-shrink-0" />
 
-        <span style={{ fontFamily: FONT, fontWeight: 800, fontSize: '0.85rem', color }}>
+        <span className="font-jakarta font-extrabold text-[0.85rem] text-[var(--c)]">
           {currentCat?.label}
         </span>
-        <span style={{ fontFamily: FONT, fontSize: '0.72rem', color: TEXT_DIM }}>
+        <span className="font-jakarta text-[0.72rem] text-tr-dim">
           {currentCat?.fullLabel}
         </span>
       </div>
 
       {/* Sub-nav (if subcategories exist) */}
       {subcategories.length > 0 && (
-        <div style={{
-          display: 'flex', gap: 0,
-          borderBottom: `1px solid ${BORDER}`,
-          paddingLeft: isMobile ? '1.25rem' : '2rem',
-          flexShrink: 0, overflowX: 'auto',
-        }}>
+        <div className={`flex border-b border-tr-border ${isMobile ? 'pl-5' : 'pl-8'} flex-shrink-0 overflow-x-auto`}>
           <SubTab label="Tout" active={!subId} color={color} onClick={() => setSubId(null)} />
           {subcategories.map((sub) => (
             <SubTab key={sub.id} label={sub.label} active={subId === sub.id} color={color} onClick={() => setSubId(sub.id)} />
@@ -86,58 +64,47 @@ export default function TradingGrid({ entries, filterId, onSelect, isMobile, onB
       )}
 
       {/* Content */}
-      <div style={{ flex: 1, overflowY: 'auto', padding: isMobile ? '1.5rem 1.25rem' : '2rem' }}>
+      <div className={`flex-1 overflow-y-auto ${isMobile ? 'py-6 px-5' : 'p-8'}`}>
 
         {/* Title + search row */}
-        <div style={{
-          display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between',
-          marginBottom: '1.5rem', flexWrap: 'wrap', gap: '0.75rem',
-        }}>
+        <div className="flex items-end justify-between mb-6 flex-wrap gap-3">
           <div>
-            <h2 style={{ fontFamily: FONT, fontSize: '1.5rem', fontWeight: 800, color: TEXT, lineHeight: 1, marginBottom: '0.3rem' }}>
+            <h2 className="font-jakarta text-2xl font-extrabold text-tr-text leading-none mb-[0.3rem]">
               {visible.length === 0 && q ? 'Aucun résultat' : currentCat?.fullLabel}
             </h2>
-            <p style={{ fontFamily: MONO, fontSize: '0.6rem', color: `${color}88` }}>
+            <p className="font-spacemono text-[0.6rem] text-[var(--c-88)]">
               {visible.length} fiche{visible.length !== 1 ? 's' : ''}
             </p>
           </div>
 
-          <div style={{ position: 'relative', width: isMobile ? '100%' : '260px' }}>
-            <span style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', fontSize: '0.8rem', color: TEXT_DIM, pointerEvents: 'none' }}>⌕</span>
+          <div className={`relative ${isMobile ? 'w-full' : 'w-[260px]'}`}>
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[0.8rem] text-tr-dim pointer-events-none">⌕</span>
             <input
               type="text" placeholder="Rechercher..."
               value={search} onChange={(e) => setSearch(e.target.value)}
-              style={{
-                width: '100%', boxSizing: 'border-box',
-                fontFamily: FONT, fontSize: '0.8rem', color: TEXT,
-                background: 'rgba(255,255,255,0.04)',
-                border: `1px solid ${BORDER}`, borderRadius: '10px',
-                padding: '0.42rem 0.75rem 0.42rem 2rem', outline: 'none',
-                transition: 'border-color 0.15s',
-              }}
+              className="w-full box-border font-jakarta text-[0.8rem] text-tr-text bg-white/[0.04] border border-tr-border rounded-[10px] pl-8 pr-3 py-[0.42rem] outline-none transition-colors"
               onFocus={(e) => { e.target.style.borderColor = `${color}88`; e.target.style.boxShadow = `0 0 12px ${color}22` }}
-              onBlur={(e)  => { e.target.style.borderColor = BORDER; e.target.style.boxShadow = 'none' }}
+              onBlur={(e)  => { e.target.style.borderColor = ''; e.target.style.boxShadow = 'none' }}
             />
             {search && (
-              <button onClick={() => setSearch('')} style={{
-                position: 'absolute', right: '0.6rem', top: '50%', transform: 'translateY(-50%)',
-                background: 'none', border: 'none', cursor: 'pointer',
-                fontSize: '0.7rem', color: TEXT_DIM, padding: '0.1rem 0.2rem',
-              }}>✕</button>
+              <button
+                onClick={() => setSearch('')}
+                className="absolute right-[0.6rem] top-1/2 -translate-y-1/2 bg-transparent border-none cursor-pointer text-[0.7rem] text-tr-dim px-[0.2rem] py-[0.1rem]"
+              >✕</button>
             )}
           </div>
         </div>
 
         {/* Empty state */}
         {visible.length === 0 && !q && (
-          <div style={{ marginTop: '3rem' }}>
-            <p style={{ fontFamily: FONT, fontSize: '1.1rem', fontWeight: 700, color: 'rgba(209,216,232,0.1)', marginBottom: '0.4rem' }}>Bientôt disponible</p>
-            <p style={{ fontFamily: FONT, fontSize: '0.78rem', color: 'rgba(209,216,232,0.07)' }}>Les fiches pour cette catégorie arrivent prochainement.</p>
+          <div className="mt-12">
+            <p className="font-jakarta text-[1.1rem] font-bold text-[rgba(209,216,232,0.1)] mb-[0.4rem]">Bientôt disponible</p>
+            <p className="font-jakarta text-[0.78rem] text-[rgba(209,216,232,0.07)]">Les fiches pour cette catégorie arrivent prochainement.</p>
           </div>
         )}
 
         {/* Grid */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '1px' }}>
+        <div className="grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-px">
           {visible.map((e) => <TradingCard key={e.id} entry={e} color={color} onClick={() => onSelect(e.id)} />)}
         </div>
       </div>
@@ -149,16 +116,12 @@ function SubTab({ label, active, color, onClick }) {
   return (
     <button
       onClick={onClick}
-      style={{
-        fontFamily: FONT, fontSize: '0.78rem', fontWeight: active ? 700 : 400,
-        color: active ? color : TEXT_DIM,
-        background: 'none', border: 'none',
-        borderBottom: `2px solid ${active ? color : 'transparent'}`,
-        cursor: 'pointer', padding: '0.65rem 1rem', whiteSpace: 'nowrap',
-        transition: 'color 0.12s, border-color 0.12s', flexShrink: 0,
-      }}
-      onMouseEnter={(e) => { if (!active) e.currentTarget.style.color = TEXT }}
-      onMouseLeave={(e) => { if (!active) e.currentTarget.style.color = TEXT_DIM }}
+      style={{ '--c': color }}
+      className={`font-jakarta text-[0.78rem] bg-transparent border-none border-b-2 cursor-pointer py-[0.65rem] px-4 whitespace-nowrap transition-colors flex-shrink-0 ${
+        active
+          ? 'font-bold text-[var(--c)] border-[var(--c)]'
+          : 'font-normal text-tr-dim border-transparent hover:text-tr-text'
+      }`}
     >
       {label}
     </button>
@@ -169,12 +132,8 @@ function TradingCard({ entry, color, onClick }) {
   return (
     <button
       onClick={onClick}
-      style={{
-        display: 'flex', flexDirection: 'column', height: '100%',
-        textAlign: 'left', padding: 0,
-        background: CARD_BG, border: 'none', borderRadius: 0,
-        overflow: 'hidden', cursor: 'pointer', transition: 'background 0.15s',
-      }}
+      style={{ '--c': color }}
+      className="flex flex-col h-full text-left p-0 bg-tr-card border-none rounded-none overflow-hidden cursor-pointer transition-colors"
       onMouseEnter={(e) => {
         e.currentTarget.style.background = CARD_HOV
         e.currentTarget.style.boxShadow = `inset 0 0 0 1px ${color}33, 0 0 20px ${color}11`
@@ -185,13 +144,8 @@ function TradingCard({ entry, color, onClick }) {
       }}
     >
       {/* Preview */}
-      <div style={{
-        height: '100px', flexShrink: 0,
-        background: '#07000e', overflow: 'hidden',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        position: 'relative', borderBottom: `1px solid ${BORDER}`,
-      }}>
-        <svg style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }}>
+      <div className="h-[100px] flex-shrink-0 bg-[#07000e] overflow-hidden flex items-center justify-center relative border-b border-tr-border">
+        <svg className="absolute inset-0 w-full h-full">
           <defs>
             <pattern id={`g-${entry.id}`} width="24" height="24" patternUnits="userSpaceOnUse">
               <circle cx="12" cy="12" r="0.5" fill={color} opacity="0.2" />
@@ -199,57 +153,35 @@ function TradingCard({ entry, color, onClick }) {
           </defs>
           <rect width="100%" height="100%" fill={`url(#g-${entry.id})`} />
         </svg>
-        <span style={{
-          fontFamily: MONO, fontSize: '0.55rem', textTransform: 'uppercase',
-          letterSpacing: '0.1em', color, opacity: 0.6,
-          position: 'absolute', top: '0.65rem', left: '0.8rem',
-        }}>
+        <span className="font-spacemono text-[0.55rem] uppercase tracking-[0.1em] text-[var(--c)] opacity-60 absolute top-[0.65rem] left-[0.8rem]">
           {entry.type}
         </span>
         {entry.risk && (
-          <span style={{
-            fontFamily: FONT, fontSize: '0.6rem', fontWeight: 600,
-            color: TEXT_DIM,
-            position: 'absolute', bottom: '0.65rem', right: '0.8rem',
-          }}>
+          <span className="font-jakarta text-[0.6rem] font-semibold text-tr-dim absolute bottom-[0.65rem] right-[0.8rem]">
             {entry.risk}
           </span>
         )}
-        <span style={{
-          fontFamily: FONT, fontWeight: 800, fontSize: '2.4rem',
-          color, opacity: 0.04, userSelect: 'none', position: 'absolute', letterSpacing: '-0.02em',
-        }}>
+        <span className="font-jakarta font-extrabold text-[2.4rem] text-[var(--c)] opacity-[0.04] select-none absolute tracking-[-0.02em]">
           {entry.title}
         </span>
       </div>
 
       {/* Text */}
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '0.9rem 1rem' }}>
-        <span style={{
-          display: 'inline-block', alignSelf: 'flex-start',
-          fontFamily: FONT, fontSize: '0.6rem', fontWeight: 700,
-          textTransform: 'uppercase', letterSpacing: '0.08em',
-          color, opacity: 0.75, marginBottom: '0.45rem',
-        }}>
+      <div className="flex-1 flex flex-col py-[0.9rem] px-4">
+        <span className="inline-block self-start font-jakarta text-[0.6rem] font-bold uppercase tracking-[0.08em] text-[var(--c)] opacity-75 mb-[0.45rem]">
           {entry.market}
         </span>
-        <p style={{ fontFamily: FONT, fontSize: '1rem', fontWeight: 800, color: TEXT, lineHeight: 1.2, marginBottom: '0.2rem' }}>
+        <p className="font-jakarta text-base font-extrabold text-tr-text leading-[1.2] mb-[0.2rem]">
           {entry.title}
         </p>
         {entry.subtitle && (
-          <p style={{ fontFamily: FONT, fontWeight: 400, fontSize: '0.74rem', color: TEXT_DIM, lineHeight: 1.4 }}>
+          <p className="font-jakarta font-normal text-[0.74rem] text-tr-dim leading-[1.4]">
             {entry.subtitle}
           </p>
         )}
-        <div style={{ flex: 1 }} />
+        <div className="flex-1" />
         {entry.timeframe && (
-          <span style={{
-            display: 'inline-block', marginTop: '0.75rem',
-            fontFamily: FONT, fontSize: '0.62rem', fontWeight: 600,
-            color: TEXT_DIM,
-            border: `1px solid ${BORDER}`,
-            borderRadius: '99px', padding: '0.2rem 0.6rem',
-          }}>
+          <span className="inline-block mt-3 font-jakarta text-[0.62rem] font-semibold text-tr-dim border border-tr-border rounded-full px-[0.6rem] py-[0.2rem]">
             {entry.timeframe}
           </span>
         )}

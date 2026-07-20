@@ -40,25 +40,10 @@ export default defineConfig({
   base: '/insights/',
   server: {
     proxy: {
-      '/proxy/coingecko': {
-        target: 'https://api.coingecko.com',
-        changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/proxy\/coingecko/, ''),
-      },
       '/proxy/binance': {
         target: 'https://api.binance.com',
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/proxy\/binance/, ''),
-      },
-      '/proxy/er': {
-        target: 'https://open.er-api.com',
-        changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/proxy\/er/, ''),
-      },
-      '/proxy/yahoo': {
-        target: 'https://query1.finance.yahoo.com',
-        changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/proxy\/yahoo/, ''),
       },
     },
   },

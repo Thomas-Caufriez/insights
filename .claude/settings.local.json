@@ -20,7 +20,8 @@
       "Bash(git -C /c/Users/thcau/Documents/GitHub/insights status)",
       "Bash(git:*)",
       "Bash(printf '#!/bin/bash\\\\necho \"git hook ran\" > /c/Users/thcau/Documents/GitHub/insights/hook_test.txt\\\\n')",
-      "Bash(chmod +x /c/Users/thcau/Documents/GitHub/insights/.git/hooks/post-commit)"
+      "Bash(chmod +x /c/Users/thcau/Documents/GitHub/insights/.git/hooks/post-commit)",
+      "PowerShell(npm run *)"
     ]
   }
 }

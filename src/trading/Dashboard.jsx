@@ -3,19 +3,13 @@ import { createPortal } from 'react-dom'
 import { tradingCategories } from './data'
 import { useIsMobile } from '../hooks/useIsMobile'
 
-const BG         = '#09000f'
-const CARD       = '#0e0018'
-const CARD_HOV   = '#160025'
 const NEON_GREEN = '#00ff88'
 const NEON_PINK  = '#ff2d78'
 const NEON_CYAN  = '#00f5ff'
 const NEON_PURP  = '#c44fff'
-const ACCENT     = NEON_CYAN
 const TEXT       = '#f5e6ff'
 const TEXT_DIM   = 'rgba(245,230,255,0.4)'
 const BORDER     = 'rgba(196,79,255,0.15)'
-const FONT       = '"DM Sans", sans-serif'
-const MONO       = '"Plus Jakarta Sans", sans-serif'
 
 const KZ_TZ = 'America/New_York'
 const KILL_ZONES = [
@@ -56,14 +50,15 @@ function getLocalTime(tz) {
   return new Intl.DateTimeFormat('fr-FR', { hour: '2-digit', minute: '2-digit', timeZone: tz }).format(new Date())
 }
 
-const labelSt = {
-  fontFamily: FONT,
-  fontSize: '0.78rem',
-  fontWeight: 700,
-  textTransform: 'uppercase',
-  letterSpacing: '0.08em',
-  color: `${NEON_CYAN}99`,
-  marginBottom: '0.5rem',
+const labelCls = 'font-sans text-[0.78rem] font-bold uppercase tracking-[0.08em] text-[#00f5ff99]'
+
+// Fixed decorative grid pattern — kept inline (multi-gradient background)
+const GRID_BG = {
+  backgroundImage: `
+    linear-gradient(rgba(196,79,255,0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(196,79,255,0.04) 1px, transparent 1px)
+  `,
+  backgroundSize: '40px 40px',
 }
 
 // ─── Main ─────────────────────────────────────────────────────────────────────
@@ -71,59 +66,27 @@ const labelSt = {
 export default function TradingDashboard({ onSelectCategory, onHome, isMobile }) {
   const isNarrow = useIsMobile(700)
   const [fearGreed, setFearGreed] = useState(null)
+  const [prices, setPrices] = useState(null)
 
   return (
-    <div style={{
-      height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden',
-      background: BG,
-      backgroundImage: `
-        linear-gradient(rgba(196,79,255,0.04) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(196,79,255,0.04) 1px, transparent 1px)
-      `,
-      backgroundSize: '40px 40px',
-    }}>
+    <div className="h-full flex flex-col overflow-hidden bg-tr-bg" style={GRID_BG}>
 
       {/* Top bar */}
-      <div style={{
-        padding: isMobile ? '0.85rem 1.25rem' : '0.85rem 2rem',
-        borderBottom: `1px solid ${BORDER}`,
-        flexShrink: 0,
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-      }}>
+      <div className={`${isMobile ? 'px-5' : 'px-8'} py-[0.85rem] border-b border-tr-border flex-shrink-0 flex items-center justify-between`}>
         <button
           onClick={onHome}
-          style={{
-            fontFamily: FONT, fontSize: '0.7rem', fontWeight: 500,
-            letterSpacing: '0.02em', color: TEXT_DIM,
-            background: 'none', border: 'none', cursor: 'pointer', padding: 0,
-            transition: 'color 0.12s',
-          }}
-          onMouseEnter={(e) => (e.currentTarget.style.color = TEXT)}
-          onMouseLeave={(e) => (e.currentTarget.style.color = TEXT_DIM)}
+          className="font-sans text-[0.7rem] font-medium tracking-[0.02em] text-tr-dim hover:text-tr-text bg-transparent border-none cursor-pointer p-0 transition-colors"
         >
           ← Insights
         </button>
-        <span style={{
-          fontFamily: FONT, fontWeight: 800,
-          fontSize: '0.9rem', letterSpacing: '0.08em',
-          color: TEXT,
-          textShadow: `0 0 18px ${NEON_PURP}88`,
-        }}>
+        <span className="font-sans font-extrabold text-[0.9rem] tracking-[0.08em] text-tr-text [text-shadow:0_0_18px_#c44fff88]">
           Trading
         </span>
-        <div style={{ width: '70px' }} />
+        <div className="w-[70px]" />
       </div>
 
       {/* Category nav strip */}
-      <div style={{
-        display: 'flex',
-        justifyContent: 'center',
-        flexWrap: 'wrap',
-        gap: '0.6rem',
-        padding: isMobile ? '0.85rem 1.25rem' : '0.85rem 2rem',
-        borderBottom: `1px solid ${BORDER}`,
-        flexShrink: 0,
-      }}>
+      <div className={`flex justify-center flex-wrap gap-[0.6rem] ${isMobile ? 'px-5' : 'px-8'} py-[0.85rem] border-b border-tr-border flex-shrink-0`}>
         {tradingCategories.map((cat) => {
           const color      = cat.color || NEON_CYAN
           const hasEntries = cat.entryIds.length > 0
@@ -131,18 +94,12 @@ export default function TradingDashboard({ onSelectCategory, onHome, isMobile })
             <button
               key={cat.id}
               onClick={hasEntries ? () => onSelectCategory(cat.id) : undefined}
-              style={{
-                fontFamily: FONT, fontSize: '0.95rem', fontWeight: 600,
-                color: hasEntries ? color : TEXT_DIM,
-                background: 'transparent',
-                border: `1px solid ${hasEntries ? `${color}44` : BORDER}`,
-                borderRadius: '99px',
-                padding: '0.45rem 1.2rem',
-                cursor: hasEntries ? 'pointer' : 'default',
-                whiteSpace: 'nowrap',
-                opacity: hasEntries ? 1 : 0.35,
-                transition: 'border-color 0.15s, box-shadow 0.15s, background 0.15s',
-              }}
+              style={hasEntries ? { '--c': color, '--c-44': `${color}44` } : undefined}
+              className={`font-sans text-[0.95rem] font-semibold bg-transparent border rounded-full px-[1.2rem] py-[0.45rem] whitespace-nowrap transition-[border-color,box-shadow,background] duration-150 ${
+                hasEntries
+                  ? 'text-[var(--c)] border-[var(--c-44)] cursor-pointer opacity-100'
+                  : 'text-tr-dim border-tr-border cursor-default opacity-35'
+              }`}
               onMouseEnter={(e) => {
                 if (!hasEntries) return
                 e.currentTarget.style.borderColor = color
@@ -151,7 +108,7 @@ export default function TradingDashboard({ onSelectCategory, onHome, isMobile })
               }}
               onMouseLeave={(e) => {
                 if (!hasEntries) return
-                e.currentTarget.style.borderColor = `${color}44`
+                e.currentTarget.style.borderColor = ''
                 e.currentTarget.style.boxShadow = 'none'
                 e.currentTarget.style.background = 'transparent'
               }}
@@ -163,33 +120,26 @@ export default function TradingDashboard({ onSelectCategory, onHome, isMobile })
       </div>
 
       {/* Scrollable */}
-      <div style={{ flex: 1, overflowY: 'auto', padding: isNarrow ? '1.25rem 1.25rem 3rem' : '1.75rem 2rem 3rem' }}>
+      <div className={`flex-1 overflow-y-auto ${isNarrow ? 'px-5 pt-5 pb-12' : 'px-8 pt-7 pb-12'}`}>
 
         {/* Bento — 3 cols, 3 rows */}
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: isNarrow ? '1fr' : 'repeat(3, 1fr)',
-          gap: '1px',
-          background: BORDER,
-          border: `1px solid ${BORDER}`,
-          borderRadius: '14px',
-          overflow: 'hidden',
-        }}>
+        <div className={`grid ${isNarrow ? 'grid-cols-1' : 'grid-cols-3'} gap-px bg-tr-border border border-tr-border rounded-[14px] overflow-hidden`}>
           {/* Row 1 — market data (prominent) */}
-          <div style={{ background: CARD, gridColumn: isNarrow ? '1' : 'span 2' }}><LivePricesWidget onFearGreed={setFearGreed} /></div>
-          <div style={{ background: CARD, display: 'flex', flexDirection: 'column' }}>
+          <div className={`bg-tr-card ${isNarrow ? 'col-[1]' : 'col-span-2'}`}><LivePricesWidget onFearGreed={setFearGreed} onPrices={setPrices} /></div>
+          <div className="bg-tr-card flex flex-col">
             <SessionsWidget />
-            <div style={{ height: '1px', background: BORDER, flexShrink: 0 }} />
-            <div style={{ flex: 1, overflow: 'hidden' }}>
+            <div className="h-px bg-tr-border flex-shrink-0" />
+            <div className="flex-1 overflow-hidden">
               <FearGreedWidget fearGreed={fearGreed} />
             </div>
           </div>
 
           {/* Row 2 — calendar full width */}
-          <div style={{ background: CARD, gridColumn: isNarrow ? '1' : 'span 3' }}><CalendarWidget /></div>
+          <div className={`bg-tr-card ${isNarrow ? 'col-[1]' : 'col-span-3'}`}><CalendarWidget /></div>
 
           {/* Row 3 — calculators */}
-          <div style={{ background: CARD }}><BasicCalcWidget /></div>
+          <div className="bg-tr-card"><BasicCalcWidget /></div>
+          <div className={`bg-tr-card ${isNarrow ? 'col-[1]' : 'col-span-2'}`}><PositionSizeWidget prices={prices} /></div>
 
         </div>
 
@@ -207,7 +157,7 @@ const TD_INTERVAL      = 300
 const TD_KEY           = '96cc1cc4671f46e292207720fc5e4bbf'
 const TD_SYMBOLS       = 'EUR/USD,GBP/USD,USD/JPY,QQQ'
 
-function LivePricesWidget({ onFearGreed }) {
+function LivePricesWidget({ onFearGreed, onPrices }) {
   const [btc,  setBtc]  = useState(null)
   const [eth,  setEth]  = useState(null)
   const [eur,  setEur]  = useState(null)
@@ -238,6 +188,18 @@ function LivePricesWidget({ onFearGreed }) {
     document.head.appendChild(style)
     return () => document.head.removeChild(style)
   }, [])
+
+  // Push latest prices up so sibling widgets (position sizer) can reuse them — no extra API calls
+  useEffect(() => {
+    onPrices?.({
+      btc:    btc?.price,
+      eth:    eth?.price,
+      eurusd: eur?.rate,
+      gbpusd: gbp?.price,
+      usdjpy: jpy?.price,
+      qqq:    qqq?.price,
+    })
+  }, [btc, eth, eur, gbp, jpy, qqq])
 
   function triggerFlash(key, newPrice) {
     const prev = prevPrices.current[key]
@@ -486,24 +448,24 @@ function LivePricesWidget({ onFearGreed }) {
   }
 
   return (
-    <div style={{ padding: '1.4rem 1.75rem', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+    <div className="py-[1.4rem] px-[1.75rem] flex flex-col gap-6">
 
       {/* ── Forex ── */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <p style={{ ...labelSt, marginBottom: 0 }}>Forex</p>
-          <span style={{ fontFamily: MONO, fontSize: '0.62rem', color: TEXT_DIM }}>Forex · ↻ {fmtTD(countdownTD)}</span>
+      <div className="flex flex-col gap-3">
+        <div className="flex items-center justify-between">
+          <p className={labelCls}>Forex</p>
+          <span className="font-jakarta text-[0.62rem] text-tr-dim">Forex · ↻ {fmtTD(countdownTD)}</span>
         </div>
         <AssetGrid columns={3} assets={forexAssets} loading={loadingTD} flashMap={flashMap} getMarketStatus={getMarketStatus} candleData={candles} />
       </div>
 
       {/* ── Marchés (Indices + Crypto) ── */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <p style={{ ...labelSt, marginBottom: 0 }}>Marchés</p>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-            <span style={{ fontFamily: MONO, fontSize: '0.62rem', color: TEXT_DIM }}>NASDAQ · ↻ {fmtTD(countdownTD)}</span>
-            <span style={{ fontFamily: MONO, fontSize: '0.62rem', color: TEXT_DIM }}>Crypto · ↻ {countdownBinance}s</span>
+      <div className="flex flex-col gap-3">
+        <div className="flex items-center justify-between">
+          <p className={labelCls}>Marchés</p>
+          <div className="flex items-center gap-3">
+            <span className="font-jakarta text-[0.62rem] text-tr-dim">NASDAQ · ↻ {fmtTD(countdownTD)}</span>
+            <span className="font-jakarta text-[0.62rem] text-tr-dim">Crypto · ↻ {countdownBinance}s</span>
           </div>
         </div>
         <AssetGrid columns={3} assets={[...indicesAssets, ...cryptoAssets]} loading={loadingTD && loadingBinance} flashMap={flashMap} getMarketStatus={getMarketStatus} candleData={candles} />
@@ -533,19 +495,16 @@ function FearGreedWidget({ fearGreed }) {
   const rad = ((arcDeg - 180) * Math.PI) / 180
 
   return (
-    <div style={{
-      height: '100%', position: 'relative',
-      display: 'flex', flexDirection: 'column',
-      alignItems: 'center', justifyContent: 'center',
-      padding: '1rem 1.5rem', gap: '0.4rem',
-      background: `${color}08`,
-    }}>
-      <div style={{ position: 'absolute', top: '0.75rem', right: '0.75rem' }}>
+    <div
+      className="h-full relative flex flex-col items-center justify-center py-4 px-6 gap-[0.4rem] bg-[var(--c-08)]"
+      style={{ '--c': color, '--c-08': `${color}08`, '--c-cc': `${color}cc` }}
+    >
+      <div className="absolute top-3 right-3">
         <InfoTooltip text={[{ label: 'Source', value: 'Alternative.me' }, { label: 'Échelle', value: '0 – 100' }, { label: '0 – 24', value: 'Peur extrême' }, { label: '25 – 44', value: 'Peur' }, { label: '45 – 54', value: 'Neutre' }, { label: '55 – 74', value: 'Avidité' }, { label: '75 – 100', value: 'Avidité extrême' }]} />
       </div>
-      <p style={{ ...labelSt, marginBottom: 0 }}>Cryptos Fear & Greed</p>
+      <p className={labelCls}>Cryptos Fear & Greed</p>
       <svg width="100%" viewBox="0 0 120 66" preserveAspectRatio="xMidYMid meet"
-        style={{ overflow: 'visible', maxWidth: '200px' }}>
+        className="overflow-visible max-w-[200px]">
         <path d="M 8 60 A 52 52 0 0 1 112 60" fill="none" stroke="rgba(196,79,255,0.15)" strokeWidth="10" strokeLinecap="round" />
         <path d="M 8 60 A 52 52 0 0 1 112 60"
           fill="none" stroke={color} strokeWidth="10" strokeLinecap="round"
@@ -558,10 +517,10 @@ function FearGreedWidget({ fearGreed }) {
           style={{ filter: `drop-shadow(0 0 6px ${color})` }}
         />
       </svg>
-      <span style={{ fontFamily: MONO, fontSize: '2.2rem', fontWeight: 800, color, letterSpacing: '-0.03em', lineHeight: 1 }}>
+      <span className="font-jakarta text-[2.2rem] font-extrabold text-[var(--c)] tracking-[-0.03em] leading-none">
         {value}
       </span>
-      <span style={{ fontFamily: FONT, fontSize: '0.88rem', fontWeight: 600, color: `${color}cc`, letterSpacing: '0.04em' }}>
+      <span className="font-sans text-[0.88rem] font-semibold text-[var(--c-cc)] tracking-[0.04em]">
         {labelFr}
       </span>
     </div>
@@ -586,7 +545,7 @@ function fmtVol(v) {
 function AssetGrid({ assets, loading, flashMap, getMarketStatus, candleData, columns = 3 }) {
   const isNarrow = useIsMobile(700)
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: isNarrow ? '1fr' : `repeat(${columns}, 1fr)`, gap: '0.7rem' }}>
+    <div className="grid gap-[0.7rem]" style={{ gridTemplateColumns: isNarrow ? '1fr' : `repeat(${columns}, 1fr)` }}>
       {assets.map((a) => {
         const displayChange = a.change ?? null
         const open          = a.market ? getMarketStatus(a.market) : null
@@ -596,31 +555,27 @@ function AssetGrid({ assets, loading, flashMap, getMarketStatus, candleData, col
           ? rawCandles.map(c => ({ open: 1/c.open, high: 1/c.low, low: 1/c.high, close: 1/c.close }))
           : rawCandles
         return (
-          <div key={a.symbol} style={{
-            background: tintColor ? `${tintColor}08` : 'rgba(196,79,255,0.03)',
-            border: `1px solid ${tintColor ? `${tintColor}22` : BORDER}`,
-            borderLeft: `3px solid ${a.color}`,
-            borderRadius: '10px',
-            padding: '1.25rem 1.4rem',
-            display: 'flex', flexDirection: 'column', gap: '0.75rem',
-            transition: 'background 0.4s, border-color 0.4s',
-          }}>
+          <div
+            key={a.symbol}
+            className="rounded-[10px] py-5 px-[1.4rem] flex flex-col gap-3 transition-[background,border-color] duration-[400ms]"
+            style={{
+              // 2-tone dynamic border (accent left + tint) kept inline
+              background: tintColor ? `${tintColor}08` : 'rgba(196,79,255,0.03)',
+              border: `1px solid ${tintColor ? `${tintColor}22` : BORDER}`,
+              borderLeft: `3px solid ${a.color}`,
+            }}
+          >
             {/* Header row — symbol + market status dot + info tooltip */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-              <span style={{ fontFamily: FONT, fontSize: '0.82rem', fontWeight: 700, color: a.color, letterSpacing: '0.05em', flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            <div className="flex items-center gap-[0.4rem]">
+              <span
+                className="font-sans text-[0.82rem] font-bold text-[var(--sc)] tracking-[0.05em] flex-1 min-w-0 overflow-hidden text-ellipsis whitespace-nowrap"
+                style={{ '--sc': a.color }}
+              >
                 {a.symbol}
               </span>
               {open !== null && (
-                <span style={{
-                  fontFamily: FONT, fontSize: '0.6rem', fontWeight: 700, letterSpacing: '0.06em',
-                  color: open ? NEON_GREEN : TEXT_DIM,
-                  display: 'flex', alignItems: 'center', gap: '0.2rem', flexShrink: 0,
-                }}>
-                  <span style={{
-                    width: '4px', height: '4px', borderRadius: '50%',
-                    background: open ? NEON_GREEN : 'rgba(196,79,255,0.2)',
-                    boxShadow: open ? `0 0 4px ${NEON_GREEN}` : 'none',
-                  }} />
+                <span className={`font-sans text-[0.6rem] font-bold tracking-[0.06em] flex items-center gap-[0.2rem] flex-shrink-0 ${open ? 'text-neon-green' : 'text-tr-dim'}`}>
+                  <span className={`w-1 h-1 rounded-full ${open ? 'bg-neon-green shadow-[0_0_4px_#00ff88]' : 'bg-[rgba(196,79,255,0.2)]'}`} />
                   {open ? 'OUVERT' : 'FERMÉ'}
                 </span>
               )}
@@ -629,21 +584,17 @@ function AssetGrid({ assets, loading, flashMap, getMarketStatus, candleData, col
 
             {/* Price + change */}
             {loading ? (
-              <div style={{ height: '2rem', background: 'rgba(196,79,255,0.07)', borderRadius: '5px' }} />
+              <div className="h-8 bg-[rgba(196,79,255,0.07)] rounded-[5px]" />
             ) : (
-              <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.4rem', flexWrap: 'wrap' }}>
-                <span style={{
-                  fontFamily: MONO, fontSize: '1.75rem', fontWeight: 700, color: TEXT, letterSpacing: '-0.02em',
-                  animation: flashMap[a.flashKey] ? `price${flashMap[a.flashKey] === 'up' ? 'Up' : 'Down'} 0.9s ease-out forwards` : 'none',
-                }}>
+              <div className="flex items-baseline gap-[0.4rem] flex-wrap">
+                <span
+                  className="font-jakarta text-[1.75rem] font-bold text-tr-text tracking-[-0.02em]"
+                  style={{ animation: flashMap[a.flashKey] ? `price${flashMap[a.flashKey] === 'up' ? 'Up' : 'Down'} 0.9s ease-out forwards` : 'none' }}
+                >
                   {a.price ?? '—'}
                 </span>
                 {displayChange != null && (
-                  <span style={{
-                    fontFamily: FONT, fontSize: '0.88rem', fontWeight: 700,
-                    color: displayChange >= 0 ? NEON_GREEN : NEON_PINK,
-                    textShadow: displayChange >= 0 ? `0 0 8px ${NEON_GREEN}66` : `0 0 8px ${NEON_PINK}66`,
-                  }}>
+                  <span className={`font-sans text-[0.88rem] font-bold ${displayChange >= 0 ? 'text-neon-green [text-shadow:0_0_8px_#00ff8866]' : 'text-neon-pink [text-shadow:0_0_8px_#ff2d7866]'}`}>
                     {displayChange >= 0 ? '+' : ''}{displayChange.toFixed(2)}%
                   </span>
                 )}
@@ -721,17 +672,17 @@ function SessionsWidget() {
   }, [])
 
   return (
-    <div style={{ padding: '1.25rem 1.5rem', overflowY: 'auto' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.1rem' }}>
-        <p style={{ ...labelSt, marginBottom: 0 }}>Kill Zones</p>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-          <span style={{ fontFamily: FONT, fontSize: '0.65rem', color: 'rgba(245,230,255,0.25)', letterSpacing: '0.04em' }}>UTC+2</span>
-          <span style={{ fontFamily: MONO, fontSize: '0.95rem', fontWeight: 700, color: NEON_CYAN }}>
+    <div className="py-5 px-6 overflow-y-auto">
+      <div className="flex justify-between items-center mb-[1.1rem]">
+        <p className={labelCls}>Kill Zones</p>
+        <div className="flex items-center gap-[0.35rem]">
+          <span className="font-sans text-[0.65rem] text-[rgba(245,230,255,0.25)] tracking-[0.04em]">UTC+2</span>
+          <span className="font-jakarta text-[0.95rem] font-bold text-neon-cyan">
             {getLocalTime('Europe/Brussels')}
           </span>
         </div>
       </div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '1.4rem' }}>
+      <div className="flex flex-col gap-[1.4rem]">
         {KILL_ZONES.map(kz => {
           const open     = isSessionOpen(kz.localOpen, kz.localClose, KZ_TZ)
           const progress = open ? getSessionProgress(kz.localOpen, kz.localClose, KZ_TZ) : 0
@@ -741,37 +692,39 @@ function SessionsWidget() {
           const beOpen  = toBeTime(kz.localOpen, KZ_TZ)
           const beClose = toBeTime(kz.localClose, KZ_TZ)
           return (
-            <div key={kz.name}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem', marginBottom: '0.4rem' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.55rem' }}>
-                  <div style={{
-                    width: '8px', height: '8px', borderRadius: '50%', flexShrink: 0,
-                    background: open ? kz.color : 'rgba(196,79,255,0.2)',
-                    boxShadow: open ? `0 0 6px ${kz.color}, 0 0 12px ${kz.color}55` : 'none',
-                    transition: 'all 0.4s',
-                  }} />
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.1rem' }}>
-                    <span style={{ fontFamily: FONT, fontSize: '1rem', fontWeight: 700, color: open ? kz.color : TEXT_DIM }}>
+            <div key={kz.name} style={{ '--kc': kz.color, '--kc-99': `${kz.color}99`, '--kc-cc': `${kz.color}cc` }}>
+              <div className="flex items-center justify-between gap-2 mb-[0.4rem]">
+                <div className="flex items-center gap-[0.55rem]">
+                  <div
+                    className="w-2 h-2 rounded-full flex-shrink-0 transition-all duration-[400ms]"
+                    style={{
+                      background: open ? kz.color : 'rgba(196,79,255,0.2)',
+                      boxShadow: open ? `0 0 6px ${kz.color}, 0 0 12px ${kz.color}55` : 'none',
+                    }}
+                  />
+                  <div className="flex flex-col gap-[0.1rem]">
+                    <span className={`font-sans text-base font-bold ${open ? 'text-[var(--kc)]' : 'text-tr-dim'}`}>
                       {kz.name}
                     </span>
-                    <span style={{ fontFamily: FONT, fontSize: '0.75rem', color: open ? `${kz.color}99` : TEXT_DIM }}>
+                    <span className={`font-sans text-[0.75rem] ${open ? 'text-[var(--kc-99)]' : 'text-tr-dim'}`}>
                       {sublabel}
                     </span>
                   </div>
                 </div>
-                <span style={{ fontFamily: MONO, fontSize: '0.88rem', fontWeight: 600, color: open ? `${kz.color}cc` : TEXT_DIM, whiteSpace: 'nowrap', flexShrink: 0 }}>
+                <span className={`font-jakarta text-[0.88rem] font-semibold whitespace-nowrap flex-shrink-0 ${open ? 'text-[var(--kc-cc)]' : 'text-tr-dim'}`}>
                   {beOpen} – {beClose}
                 </span>
               </div>
-              <div style={{ height: '2px', background: 'rgba(196,79,255,0.1)', borderRadius: '99px', overflow: 'hidden' }}>
+              <div className="h-0.5 bg-[rgba(196,79,255,0.1)] rounded-full overflow-hidden">
                 {open && (
-                  <div style={{
-                    height: '100%', width: `${progress}%`,
-                    background: `linear-gradient(90deg, ${kz.color}55, ${kz.color})`,
-                    borderRadius: '99px',
-                    boxShadow: `0 0 5px ${kz.color}66`,
-                    transition: 'width 1s ease',
-                  }} />
+                  <div
+                    className="h-full rounded-full transition-[width] duration-1000"
+                    style={{
+                      width: `${progress}%`,
+                      background: `linear-gradient(90deg, ${kz.color}55, ${kz.color})`,
+                      boxShadow: `0 0 5px ${kz.color}66`,
+                    }}
+                  />
                 )}
               </div>
             </div>
@@ -836,16 +789,16 @@ function CalendarWidget() {
   const tabList  = tab === 'upcoming' ? upcoming : tab === 'past' ? past : events
 
   return (
-    <div style={{ padding: '1.25rem 1.5rem', display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+    <div className="py-5 px-6 flex flex-col gap-[0.85rem]">
 
       {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <p style={labelSt}>Calendrier économique</p>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+      <div className="flex items-center justify-between">
+        <p className={`${labelCls} mb-2`}>Calendrier économique</p>
+        <div className="flex items-center gap-4">
           {[['High', NEON_PINK, 'Fort'], ['Medium', '#f4c542', 'Modéré'], ['Low', TEXT_DIM, 'Faible']].map(([label, color, desc]) => (
-            <div key={label} style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-              <div style={{ width: '7px', height: '7px', borderRadius: '2px', background: color, boxShadow: label === 'High' ? `0 0 5px ${color}88` : 'none' }} />
-              <span style={{ fontFamily: FONT, fontSize: '0.68rem', color: TEXT_DIM }}>{desc}</span>
+            <div key={label} className="flex items-center gap-[0.3rem]">
+              <div className="w-[7px] h-[7px] rounded-sm" style={{ background: color, boxShadow: label === 'High' ? `0 0 5px ${color}88` : 'none' }} />
+              <span className="font-sans text-[0.68rem] text-tr-dim">{desc}</span>
             </div>
           ))}
         </div>
@@ -853,15 +806,15 @@ function CalendarWidget() {
 
       {/* Collapsed — next 5 (masqué si expanded) */}
       {!expanded && loading ? (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-          {[1,2,3].map(i => <div key={i} style={{ height: '2rem', background: 'rgba(196,79,255,0.06)', borderRadius: '6px' }} />)}
+        <div className="flex flex-col gap-[0.4rem]">
+          {[1,2,3].map(i => <div key={i} className="h-8 bg-[rgba(196,79,255,0.06)] rounded-md" />)}
         </div>
       ) : !expanded && preview.length === 0 ? (
-        <p style={{ fontFamily: FONT, fontSize: '0.82rem', color: TEXT_DIM, fontStyle: 'italic' }}>
+        <p className="font-sans text-[0.82rem] text-tr-dim italic">
           Aucun événement à venir aujourd'hui.
         </p>
       ) : !expanded ? (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+        <div className="flex flex-col gap-[0.35rem]">
           {preview.map((e, i) => <EventRow key={i} e={e} fmtTime={fmtTime} isReleased={isReleased} isPast={isPast} />)}
         </div>
       ) : null}
@@ -870,42 +823,34 @@ function CalendarWidget() {
       {!loading && events.length > 0 && (
         <button
           onClick={() => setExpanded(x => !x)}
-          style={{
-            fontFamily: FONT, fontSize: '0.74rem', fontWeight: 600,
-            color: TEXT_DIM, background: 'rgba(196,79,255,0.05)',
-            border: `1px solid ${BORDER}`, borderRadius: '8px',
-            padding: '0.4rem', cursor: 'pointer',
-            transition: 'color 0.15s, background 0.15s',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem',
-          }}
-          onMouseEnter={e => { e.currentTarget.style.color = TEXT; e.currentTarget.style.background = 'rgba(196,79,255,0.1)' }}
-          onMouseLeave={e => { e.currentTarget.style.color = TEXT_DIM; e.currentTarget.style.background = 'rgba(196,79,255,0.05)' }}
+          className="font-sans text-[0.74rem] font-semibold text-tr-dim hover:text-tr-text bg-[rgba(196,79,255,0.05)] hover:bg-[rgba(196,79,255,0.1)] border border-tr-border rounded-lg p-[0.4rem] cursor-pointer transition-colors flex items-center justify-center gap-[0.4rem]"
         >
-          <span style={{ transition: 'transform 0.2s', display: 'inline-block', transform: expanded ? 'rotate(180deg)' : 'none' }}>▾</span>
+          <span className={`transition-transform duration-200 inline-block ${expanded ? 'rotate-180' : ''}`}>▾</span>
           {expanded ? 'Réduire' : `Voir tout (${events.length} événements)`}
         </button>
       )}
 
       {/* Expanded — tabs */}
       {expanded && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
+        <div className="flex flex-col gap-[0.65rem]">
           {/* Tabs */}
-          <div style={{ display: 'flex', gap: '0.4rem' }}>
+          <div className="flex gap-[0.4rem]">
             {[['upcoming', `À venir (${upcoming.length})`], ['past', `Passés (${past.length})`], ['all', `Tout (${events.length})`]].map(([key, label]) => (
-              <button key={key} onClick={() => setTab(key)} style={{
-                fontFamily: FONT, fontSize: '0.74rem', fontWeight: 600,
-                color: tab === key ? NEON_CYAN : TEXT_DIM,
-                background: tab === key ? `${NEON_CYAN}12` : 'transparent',
-                border: `1px solid ${tab === key ? `${NEON_CYAN}44` : BORDER}`,
-                borderRadius: '99px', padding: '0.25rem 0.8rem',
-                cursor: 'pointer', transition: 'all 0.15s',
-              }}>{label}</button>
+              <button
+                key={key}
+                onClick={() => setTab(key)}
+                className={`font-sans text-[0.74rem] font-semibold rounded-full px-[0.8rem] py-[0.25rem] cursor-pointer transition-all border ${
+                  tab === key
+                    ? 'text-neon-cyan bg-[#00f5ff12] border-[#00f5ff44]'
+                    : 'text-tr-dim bg-transparent border-tr-border'
+                }`}
+              >{label}</button>
             ))}
           </div>
           {/* List */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+          <div className="flex flex-col gap-[0.35rem]">
             {tabList.length === 0 ? (
-              <p style={{ fontFamily: FONT, fontSize: '0.8rem', color: TEXT_DIM, fontStyle: 'italic' }}>Aucun événement.</p>
+              <p className="font-sans text-[0.8rem] text-tr-dim italic">Aucun événement.</p>
             ) : tabList.map((e, i) => (
               <EventRow key={i} e={e} fmtTime={fmtTime} isReleased={isReleased} isPast={isPast} />
             ))}
@@ -923,33 +868,33 @@ function EventRow({ e, fmtTime, isReleased, isPast }) {
   const currCol   = CURRENCY_COLOR[e.country] || TEXT_DIM
   const isHigh    = e.impact === 'High'
   return (
-    <div style={{
-      display: 'grid', gridTemplateColumns: '3rem 2.5rem 1fr auto',
-      alignItems: 'center', gap: '0.65rem',
-      padding: '0.6rem 0.9rem',
-      background: past ? 'rgba(196,79,255,0.03)' : isHigh ? `${impactCol}12` : `${impactCol}06`,
-      border: `1px solid ${past ? BORDER : impactCol + (isHigh ? '44' : '22')}`,
-      borderLeft: `3px solid ${impactCol}`,
-      borderRadius: '8px',
-      opacity: past && !released ? 0.4 : 1,
-      boxShadow: !past && isHigh ? `0 0 10px ${impactCol}18` : 'none',
-    }}>
-      <span style={{ fontFamily: MONO, fontSize: '0.74rem', color: past ? TEXT_DIM : isHigh ? TEXT : TEXT_DIM }}>
+    <div
+      className={`grid grid-cols-[3rem_2.5rem_1fr_auto] items-center gap-[0.65rem] py-[0.6rem] px-[0.9rem] rounded-lg ${past && !released ? 'opacity-40' : 'opacity-100'}`}
+      style={{
+        // impact-tinted background / border kept inline (dynamic multi-value)
+        '--ic': impactCol, '--ic-88': `${impactCol}88`,
+        background: past ? 'rgba(196,79,255,0.03)' : isHigh ? `${impactCol}12` : `${impactCol}06`,
+        border: `1px solid ${past ? BORDER : impactCol + (isHigh ? '44' : '22')}`,
+        borderLeft: `3px solid ${impactCol}`,
+        boxShadow: !past && isHigh ? `0 0 10px ${impactCol}18` : 'none',
+      }}
+    >
+      <span className={`font-jakarta text-[0.74rem] ${!past && isHigh ? 'text-tr-text' : 'text-tr-dim'}`}>
         {fmtTime(e.date)}
       </span>
-      <span style={{ fontFamily: MONO, fontSize: '0.74rem', fontWeight: 700, color: currCol }}>
+      <span className="font-jakarta text-[0.74rem] font-bold text-[var(--cc)]" style={{ '--cc': currCol }}>
         {e.country}
       </span>
-      <span style={{ fontFamily: FONT, fontSize: '0.8rem', fontWeight: isHigh ? 600 : 500, color: past ? TEXT_DIM : isHigh ? TEXT : `${TEXT}bb`, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+      <span className={`font-sans text-[0.8rem] overflow-hidden text-ellipsis whitespace-nowrap ${isHigh ? 'font-semibold' : 'font-medium'} ${past ? 'text-tr-dim' : isHigh ? 'text-tr-text' : 'text-[#f5e6ffbb]'}`}>
         {e.title}
       </span>
-      <div style={{ flexShrink: 0 }}>
+      <div className="flex-shrink-0">
         {released ? (
-          <span style={{ fontFamily: MONO, fontSize: '0.74rem', fontWeight: 700, color: impactCol, textShadow: isHigh ? `0 0 8px ${impactCol}88` : 'none' }}>
+          <span className={`font-jakarta text-[0.74rem] font-bold text-[var(--ic)] ${isHigh ? '[text-shadow:0_0_8px_var(--ic-88)]' : ''}`}>
             {e.actual}
           </span>
         ) : e.forecast ? (
-          <span style={{ fontFamily: MONO, fontSize: '0.68rem', color: TEXT_DIM }}>
+          <span className="font-jakarta text-[0.68rem] text-tr-dim">
             prev. {e.forecast}
           </span>
         ) : null}
@@ -1066,38 +1011,31 @@ function BasicCalcWidget() {
   const fontSize = display.length > 8 ? '1.1rem' : display.length > 5 ? '1.3rem' : '1.5rem'
 
   return (
-    <div style={{ padding: '1.1rem 1.2rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-      <p style={labelSt}>Calculatrice</p>
-      <div style={{
-        background: 'rgba(196,79,255,0.05)', border: `1px solid ${BORDER}`,
-        borderRadius: '8px', overflow: 'hidden',
-      }}>
-        <div style={{ padding: '0.25rem 0.8rem 0', textAlign: 'right', minHeight: '1rem' }}>
-          <span style={{ fontFamily: MONO, fontSize: '0.58rem', color: TEXT_DIM }}>
+    <div className="py-[1.1rem] px-[1.2rem] flex flex-col gap-2">
+      <p className={`${labelCls} mb-2`}>Calculatrice</p>
+      <div className="bg-[rgba(196,79,255,0.05)] border border-tr-border rounded-lg overflow-hidden">
+        <div className="px-[0.8rem] pt-1 text-right min-h-[1rem]">
+          <span className="font-jakarta text-[0.58rem] text-tr-dim">
             {expression}
           </span>
         </div>
-        <div style={{ padding: '0.1rem 0.8rem 0.35rem', textAlign: 'right' }}>
-          <span style={{ fontFamily: MONO, fontSize, color: TEXT, transition: 'font-size 0.1s' }}>
+        <div className="pt-[0.1rem] px-[0.8rem] pb-[0.35rem] text-right">
+          <span className="font-jakarta text-tr-text transition-[font-size] duration-100" style={{ fontSize }}>
             {display}
           </span>
         </div>
       </div>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.28rem' }}>
+      <div className="grid grid-cols-4 gap-[0.28rem]">
         {btns.map((b, i) => (
           <button
             key={i}
             onClick={b.onPress}
+            className="font-jakarta text-[0.92rem] font-semibold rounded-md py-[0.55rem] cursor-pointer transition-[background,box-shadow] duration-[120ms]"
             style={{
               gridColumn: b.span ? `span ${b.span}` : undefined,
-              fontFamily: MONO, fontSize: '0.92rem', fontWeight: 600,
               color: btnColor(b.type),
               background: btnBg(b.type),
               border: `1px solid ${b.type === 'eq' ? `${NEON_CYAN}33` : b.type === 'op' ? `${NEON_PURP}22` : BORDER}`,
-              borderRadius: '6px',
-              padding: '0.55rem 0',
-              cursor: 'pointer',
-              transition: 'background 0.12s, box-shadow 0.12s',
             }}
             onMouseEnter={(e) => {
               e.currentTarget.style.background = `${btnColor(b.type)}22`
@@ -1112,6 +1050,168 @@ function BasicCalcWidget() {
           </button>
         ))}
       </div>
+    </div>
+  )
+}
+
+// ─── Position size calculator ─────────────────────────────────────────────────
+
+const CCY_SYM = { USD: '$', EUR: '€', JPY: '¥' }
+
+// Scoped to the instruments the dashboard already tracks — quote currency known,
+// so conversions only ever need EUR/USD or USD/JPY, which are already fetched.
+const INSTRUMENTS = [
+  { id: 'btc',    label: 'BTC/USDT', kind: 'crypto', quote: 'USD', priceKey: 'btc' },
+  { id: 'eth',    label: 'ETH/USDT', kind: 'crypto', quote: 'USD', priceKey: 'eth' },
+  { id: 'eurusd', label: 'EUR/USD',  kind: 'forex',  quote: 'USD', pip: 0.0001, contract: 100000, priceKey: 'eurusd' },
+  { id: 'gbpusd', label: 'GBP/USD',  kind: 'forex',  quote: 'USD', pip: 0.0001, contract: 100000, priceKey: 'gbpusd' },
+  { id: 'usdjpy', label: 'USD/JPY',  kind: 'forex',  quote: 'JPY', pip: 0.01,   contract: 100000, priceKey: 'usdjpy' },
+  { id: 'qqq',    label: 'NASDAQ',   kind: 'stock',  quote: 'USD', priceKey: 'qqq' },
+]
+
+function computePosition({ inst, capital, riskPct, entry, stop, acctCcy, prices }) {
+  const cap = parseFloat(capital)
+  const rp  = parseFloat(riskPct)
+  const e   = parseFloat(entry)
+  const s   = parseFloat(stop)
+  if (![cap, rp, e, s].every(Number.isFinite) || cap <= 0 || rp <= 0) return null
+  const stopDist = Math.abs(e - s)
+  if (stopDist <= 0) return null
+
+  const riskAcct = cap * (rp / 100)
+
+  // account currency → USD
+  let riskUSD
+  if (acctCcy === 'USD') riskUSD = riskAcct
+  else { if (!prices?.eurusd) return { needRate: 'EUR/USD', riskAcct }; riskUSD = riskAcct * prices.eurusd }
+
+  // USD → instrument quote currency
+  let riskQuote
+  if (inst.quote === 'USD') riskQuote = riskUSD
+  else { if (!prices?.usdjpy) return { needRate: 'USD/JPY', riskAcct }; riskQuote = riskUSD * prices.usdjpy }
+
+  const units    = riskQuote / stopDist
+  const out = { riskAcct, stopDist, units, notional: units * e }
+  if (inst.kind === 'forex') {
+    out.lots     = units / inst.contract
+    out.pips     = stopDist / inst.pip
+    out.pipValue = units * inst.pip
+  }
+  return out
+}
+
+function fmtQty(n) {
+  if (!Number.isFinite(n)) return '—'
+  if (Math.abs(n) >= 1000) return n.toLocaleString('en-US', { maximumFractionDigits: 0 })
+  if (Math.abs(n) >= 1)    return n.toLocaleString('en-US', { maximumFractionDigits: 2 })
+  return n.toLocaleString('en-US', { maximumFractionDigits: 6 })
+}
+function fmtMoney(n, dp = 2) {
+  if (!Number.isFinite(n)) return '—'
+  return n.toLocaleString('en-US', { minimumFractionDigits: dp, maximumFractionDigits: dp })
+}
+
+function PositionSizeWidget({ prices }) {
+  const [instId,  setInstId]  = useState('btc')
+  const [acct,    setAcct]    = useState('USD')
+  const [capital, setCapital] = useState('10000')
+  const [riskPct, setRiskPct] = useState('1')
+  const [entry,   setEntry]   = useState('')
+  const [stop,    setStop]    = useState('')
+
+  const inst = INSTRUMENTS.find(i => i.id === instId)
+  const live = prices?.[inst.priceKey]
+  const res  = computePosition({ inst, capital, riskPct, entry, stop, acctCcy: acct, prices })
+
+  const inputCls = 'w-full box-border font-jakarta text-[0.82rem] text-tr-text bg-[rgba(196,79,255,0.05)] border border-tr-border rounded-md px-2 py-[0.35rem] outline-none focus:border-[#00f5ff88] transition-colors'
+
+  return (
+    <div className="py-[1.1rem] px-[1.2rem] flex flex-col gap-3 h-full">
+      <div className="flex items-center justify-between">
+        <p className={labelCls}>Taille de position</p>
+        <div className="flex gap-1">
+          {['USD', 'EUR'].map(c => (
+            <button
+              key={c}
+              onClick={() => setAcct(c)}
+              className={`font-jakarta text-[0.62rem] font-semibold rounded-full px-2 py-[0.15rem] border transition-colors ${acct === c ? 'text-neon-cyan bg-[#00f5ff12] border-[#00f5ff44]' : 'text-tr-dim bg-transparent border-tr-border'}`}
+            >
+              {c}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Instrument pills */}
+      <div className="flex flex-wrap gap-1">
+        {INSTRUMENTS.map(i => (
+          <button
+            key={i.id}
+            onClick={() => setInstId(i.id)}
+            className={`font-jakarta text-[0.66rem] font-semibold rounded-md px-[0.5rem] py-[0.2rem] border transition-colors ${instId === i.id ? 'text-tr-text bg-[rgba(196,79,255,0.12)] border-[rgba(196,79,255,0.4)]' : 'text-tr-dim bg-transparent border-tr-border hover:text-tr-text'}`}
+          >
+            {i.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Inputs */}
+      <div className="grid grid-cols-2 gap-2">
+        <Field label={`Capital (${CCY_SYM[acct]})`}>
+          <input className={inputCls} inputMode="decimal" value={capital} onChange={e => setCapital(e.target.value)} />
+        </Field>
+        <Field label="Risque (%)">
+          <input className={inputCls} inputMode="decimal" value={riskPct} onChange={e => setRiskPct(e.target.value)} />
+        </Field>
+        <Field label="Entrée" hint={live != null ? `live ${fmtQty(live)}` : null} onHint={() => live != null && setEntry(String(live))}>
+          <input className={inputCls} inputMode="decimal" value={entry} onChange={e => setEntry(e.target.value)} placeholder={live != null ? fmtQty(live) : '—'} />
+        </Field>
+        <Field label="Stop-loss">
+          <input className={inputCls} inputMode="decimal" value={stop} onChange={e => setStop(e.target.value)} />
+        </Field>
+      </div>
+
+      {/* Results */}
+      <div className="mt-auto rounded-lg border border-tr-border bg-[rgba(196,79,255,0.04)] p-3 flex flex-col gap-1.5">
+        {!res ? (
+          <p className="font-sans text-[0.75rem] text-tr-dim italic">Renseigne capital, risque, entrée et stop.</p>
+        ) : res.needRate ? (
+          <p className="font-sans text-[0.75rem] text-tr-dim italic">En attente du taux {res.needRate}…</p>
+        ) : (
+          <>
+            <ResRow label="Risque" value={`${CCY_SYM[acct]}${fmtMoney(res.riskAcct)}`} accent />
+            <ResRow label="Distance" value={inst.kind === 'forex' ? `${fmtQty(res.stopDist)} · ${fmtMoney(res.pips, 1)} pips` : fmtQty(res.stopDist)} />
+            <ResRow label="Taille" value={inst.kind === 'forex' ? `${fmtMoney(res.lots, 2)} lots · ${fmtQty(res.units)} u.` : `${fmtQty(res.units)} unités`} accent />
+            {inst.kind === 'forex' && <ResRow label="Valeur du pip" value={`${CCY_SYM[inst.quote]}${fmtMoney(res.pipValue)}`} />}
+            <ResRow label="Valeur position" value={`${CCY_SYM[inst.quote]}${fmtMoney(res.notional, inst.quote === 'JPY' ? 0 : 2)}`} />
+          </>
+        )}
+      </div>
+    </div>
+  )
+}
+
+function Field({ label, hint, onHint, children }) {
+  return (
+    <div className="flex flex-col">
+      <div className="flex items-center justify-between mb-1">
+        <span className="font-sans text-[0.62rem] uppercase tracking-[0.08em] text-tr-dim">{label}</span>
+        {hint && (
+          <button onClick={onHint} className="font-jakarta text-[0.58rem] text-neon-cyan hover:underline cursor-pointer bg-transparent border-none p-0">
+            {hint}
+          </button>
+        )}
+      </div>
+      {children}
+    </div>
+  )
+}
+
+function ResRow({ label, value, accent }) {
+  return (
+    <div className="flex items-center justify-between">
+      <span className="font-sans text-[0.72rem] text-tr-dim">{label}</span>
+      <span className={`font-jakarta text-[0.82rem] font-bold ${accent ? 'text-neon-cyan' : 'text-tr-text'}`}>{value}</span>
     </div>
   )
 }
@@ -1142,7 +1242,7 @@ function MiniCandleChart({ data }) {
       width="100%" height={H}
       viewBox={`0 0 ${W} ${H}`}
       preserveAspectRatio="xMidYMid meet"
-      style={{ display: 'block', marginTop: '0.35rem' }}
+      className="block mt-[0.35rem]"
     >
       {data.map((c, i) => {
         const x    = offsetX + i * (candleW + gap)
@@ -1185,46 +1285,31 @@ function InfoTooltip({ text }) {
   }
 
   return (
-    <div style={{ position: 'relative', display: 'inline-block', flexShrink: 0 }}>
+    <div className="relative inline-block flex-shrink-0">
       <div
         ref={triggerRef}
         onMouseEnter={handleEnter}
         onMouseLeave={() => setShow(false)}
-        style={{
-          width: '14px', height: '14px', borderRadius: '50%',
-          border: `1px solid ${BORDER}`,
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          cursor: 'help',
-          fontFamily: MONO, fontSize: '0.52rem', color: TEXT_DIM,
-        }}
+        className="w-[14px] h-[14px] rounded-full border border-tr-border flex items-center justify-center cursor-help font-jakarta text-[0.52rem] text-tr-dim"
       >
         ?
       </div>
       {show && createPortal(
-        <div style={{
-          position: 'fixed',
-          top: pos.top,
-          left: pos.left,
-          background: '#1e0035',
-          border: `1px solid rgba(196,79,255,0.3)`,
-          borderRadius: '8px',
-          padding: '0.75rem 0.9rem',
-          width: '220px',
-          zIndex: 9999,
-          boxShadow: `0 4px 24px rgba(0,0,0,0.7)`,
-          pointerEvents: 'none',
-        }}>
+        <div
+          className="fixed bg-[#1e0035] border border-[rgba(196,79,255,0.3)] rounded-lg py-3 px-[0.9rem] w-[220px] z-[9999] shadow-[0_4px_24px_rgba(0,0,0,0.7)] pointer-events-none"
+          style={{ top: pos.top, left: pos.left }}
+        >
           {Array.isArray(text) ? (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+            <div className="flex flex-col gap-[0.35rem]">
               {text.map(({ label, value }, i) => (
-                <div key={i} style={{ display: 'flex', justifyContent: 'space-between', gap: '0.75rem' }}>
-                  <span style={{ fontFamily: FONT, fontSize: '0.75rem', color: 'rgba(245,230,255,0.4)', whiteSpace: 'nowrap' }}>{label}</span>
-                  <span style={{ fontFamily: MONO, fontSize: '0.75rem', color: 'rgba(245,230,255,0.9)', textAlign: 'right' }}>{value}</span>
+                <div key={i} className="flex justify-between gap-3">
+                  <span className="font-sans text-[0.75rem] text-tr-dim whitespace-nowrap">{label}</span>
+                  <span className="font-jakarta text-[0.75rem] text-[rgba(245,230,255,0.9)] text-right">{value}</span>
                 </div>
               ))}
             </div>
           ) : (
-            <p style={{ fontFamily: FONT, fontSize: '0.8rem', color: 'rgba(245,230,255,0.8)', lineHeight: 1.6, margin: 0 }}>
+            <p className="font-sans text-[0.8rem] text-[rgba(245,230,255,0.8)] leading-[1.6] m-0">
               {text}
             </p>
           )}

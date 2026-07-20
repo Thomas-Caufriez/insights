@@ -1,13 +1,4 @@
-const NEON_GREEN = '#00ff88'
-const NEON_PINK  = '#ff2d78'
-const NEON_CYAN  = '#00f5ff'
-const NEON_PURP  = '#c44fff'
-const ACCENT     = NEON_CYAN
-const TEXT       = '#f5e6ff'
-const TEXT_DIM   = 'rgba(245,230,255,0.4)'
-const BORDER     = 'rgba(196,79,255,0.15)'
-const FONT       = '"Plus Jakarta Sans", sans-serif'
-const MONO       = '"Space Mono", monospace'
+const ACCENT = '#00f5ff'
 
 const MARKET_COLORS = {
   'Crypto':             '#ff9900',
@@ -19,53 +10,34 @@ const MARKET_COLORS = {
   'Psychologie':        '#ff6ef7',
 }
 
-const labelSt = {
-  fontFamily: MONO,
-  fontSize: '0.57rem',
-  textTransform: 'uppercase',
-  letterSpacing: '0.14em',
-  color: `${NEON_CYAN}88`,
-  marginBottom: '0.5rem',
-}
+// Shared uppercase mono label — cyan at 88 alpha (static)
+const labelCls = 'font-spacemono text-[0.57rem] uppercase tracking-[0.14em] text-[#00f5ff88]'
 
 export function TradingPageHeader({ entry }) {
   const marketColor = MARKET_COLORS[entry.market] || ACCENT
 
   return (
-    <div>
-      <p style={{
-        fontFamily: FONT, fontSize: '0.65rem', fontWeight: 700,
-        textTransform: 'uppercase', letterSpacing: '0.12em',
-        color: marketColor, marginBottom: '0.5rem',
-        textShadow: `0 0 12px ${marketColor}`,
-      }}>
+    <div style={{ '--mc': marketColor, '--mc-33': `${marketColor}33` }}>
+      <p className="font-jakarta text-[0.65rem] font-bold uppercase tracking-[0.12em] text-[var(--mc)] mb-2 [text-shadow:0_0_12px_var(--mc)]">
         {entry.market}
       </p>
 
-      <h1 style={{
-        fontFamily: FONT,
-        fontSize: '2.4rem', fontWeight: 800, letterSpacing: '-0.02em',
-        color: TEXT, lineHeight: 1.05,
-        marginBottom: entry.subtitle ? '0.4rem' : '1rem',
-        textShadow: `0 0 30px ${marketColor}33`,
-      }}>
+      <h1
+        className={`font-jakarta text-[2.4rem] font-extrabold tracking-[-0.02em] text-tr-text leading-[1.05] [text-shadow:0_0_30px_var(--mc-33)] ${entry.subtitle ? 'mb-[0.4rem]' : 'mb-4'}`}
+      >
         {entry.title}
       </h1>
 
       {entry.subtitle && (
-        <p style={{
-          fontFamily: FONT, fontWeight: 400, fontSize: '1rem',
-          color: TEXT_DIM, letterSpacing: '-0.01em',
-          marginBottom: '1.25rem', lineHeight: 1.5,
-        }}>
+        <p className="font-jakarta font-normal text-base text-tr-dim tracking-[-0.01em] mb-5 leading-normal">
           {entry.subtitle}
         </p>
       )}
 
-      <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-        {entry.risk     && <MetaTag label={entry.risk}      color={marketColor} />}
+      <div className="flex gap-2 flex-wrap">
+        {entry.risk      && <MetaTag label={entry.risk}      color={marketColor} />}
         {entry.timeframe && <MetaTag label={entry.timeframe} />}
-        {entry.type     && <MetaTag label={entry.type} />}
+        {entry.type      && <MetaTag label={entry.type} />}
       </div>
     </div>
   )
@@ -73,48 +45,42 @@ export function TradingPageHeader({ entry }) {
 
 export function TradingPageBody({ entry }) {
   return (
-    <div style={{ display: 'flex', gap: '3rem', flexWrap: 'wrap' }}>
+    <div className="flex gap-12 flex-wrap">
 
       {entry.stats?.length > 0 && (
         <>
-          <div style={{ width: '160px', flexShrink: 0 }}>
-            <p style={labelSt}>Données clés</p>
+          <div className="w-40 flex-shrink-0">
+            <p className={`${labelCls} mb-2`}>Données clés</p>
             {entry.stats.map((stat, i) => (
-              <div key={i} style={{ paddingBottom: '0.7rem', marginBottom: '0.7rem', borderBottom: `1px solid ${BORDER}` }}>
-                <p style={{ fontFamily: MONO, fontSize: '0.55rem', textTransform: 'uppercase', letterSpacing: '0.1em', color: `${NEON_CYAN}77`, marginBottom: '0.2rem' }}>
+              <div key={i} className="pb-[0.7rem] mb-[0.7rem] border-b border-tr-border">
+                <p className="font-spacemono text-[0.55rem] uppercase tracking-[0.1em] text-[#00f5ff77] mb-[0.2rem]">
                   {stat.label}
                 </p>
-                <p style={{ fontFamily: FONT, fontSize: '0.88rem', fontWeight: 700, color: TEXT, letterSpacing: '-0.01em' }}>
+                <p className="font-jakarta text-[0.88rem] font-bold text-tr-text tracking-[-0.01em]">
                   {stat.value}
                 </p>
               </div>
             ))}
           </div>
 
-          <div style={{ width: '1px', background: BORDER, flexShrink: 0, minHeight: '100px' }} />
+          <div className="w-px bg-tr-border flex-shrink-0 min-h-[100px]" />
         </>
       )}
 
-      <div style={{ flex: 1, minWidth: 0 }}>
+      <div className="flex-1 min-w-0">
         {entry.sections?.map((section, i) => (
-          <div key={i} style={{ marginBottom: '1.75rem' }}>
-            <p style={{ ...labelSt, marginBottom: '0.6rem' }}>{section.title}</p>
-            <p style={{ fontFamily: FONT, fontWeight: 400, fontSize: '0.9rem', lineHeight: 1.75, color: TEXT, margin: 0 }}>
+          <div key={i} className="mb-7">
+            <p className={`${labelCls} mb-[0.6rem]`}>{section.title}</p>
+            <p className="font-jakarta font-normal text-[0.9rem] leading-[1.75] text-tr-text m-0">
               {section.text}
             </p>
           </div>
         ))}
 
         {entry.notes && (
-          <div style={{
-            marginTop: '0.5rem', padding: '1rem 1.1rem',
-            borderLeft: `2px solid ${NEON_PURP}55`,
-            background: `${NEON_PURP}08`,
-            borderRadius: '0 8px 8px 0',
-            boxShadow: `inset 0 0 20px ${NEON_PURP}05`,
-          }}>
-            <p style={{ ...labelSt, marginBottom: '0.4rem' }}>Note</p>
-            <p style={{ fontFamily: FONT, fontWeight: 400, fontSize: '0.84rem', lineHeight: 1.7, color: TEXT_DIM, margin: 0 }}>
+          <div className="mt-2 py-4 px-[1.1rem] border-l-2 border-[#c44fff55] bg-[#c44fff08] rounded-r-lg [box-shadow:inset_0_0_20px_#c44fff05]">
+            <p className={`${labelCls} mb-[0.4rem]`}>Note</p>
+            <p className="font-jakarta font-normal text-[0.84rem] leading-[1.7] text-tr-dim m-0">
               {entry.notes}
             </p>
           </div>
@@ -125,16 +91,15 @@ export function TradingPageBody({ entry }) {
 }
 
 function MetaTag({ label, color }) {
+  const base = 'font-jakarta text-[0.65rem] font-semibold tracking-[0.02em] rounded-full py-[0.22rem] px-[0.65rem] border'
+  if (!color) {
+    return <span className={`${base} text-tr-dim border-tr-border`}>{label}</span>
+  }
   return (
-    <span style={{
-      fontFamily: FONT, fontSize: '0.65rem', fontWeight: 600,
-      letterSpacing: '0.02em',
-      color: color || TEXT_DIM,
-      border: `1px solid ${color ? `${color}44` : BORDER}`,
-      borderRadius: '99px',
-      padding: '0.22rem 0.65rem',
-      boxShadow: color ? `0 0 10px ${color}22` : 'none',
-    }}>
+    <span
+      style={{ '--c': color, '--c-44': `${color}44`, '--c-22': `${color}22` }}
+      className={`${base} text-[var(--c)] border-[var(--c-44)] shadow-[0_0_10px_var(--c-22)]`}
+    >
       {label}
     </span>
   )

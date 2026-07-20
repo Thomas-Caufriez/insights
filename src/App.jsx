@@ -423,58 +423,41 @@ function DecorativePanel({ Illustration }) {
 }
 
 function TradingDetailView({ entry, onBack, isMobile }) {
-  const hPad = isMobile ? '1rem' : '3.5rem'
   const hidePanel = useIsMobile(1100)
 
   return (
-    <div style={{ height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden', background: '#0d1117' }}>
+    <div className="h-full flex flex-col overflow-hidden bg-[#0d1117]">
 
       {/* Back bar */}
-      <div style={{
-        padding: `0.9rem ${hPad}`,
-        borderBottom: '1px solid rgba(0,212,170,0.07)',
-        flexShrink: 0,
-        display: 'flex',
-        alignItems: 'center',
-        gap: '0.75rem',
-      }}>
+      <div className={`py-[0.9rem] ${isMobile ? 'px-4' : 'px-14'} border-b border-[rgba(0,212,170,0.07)] flex-shrink-0 flex items-center gap-3`}>
         <button
           onClick={onBack}
-          style={{
-            fontFamily: '"Plus Jakarta Sans", sans-serif', fontSize: '0.72rem', fontWeight: 600,
-            letterSpacing: '0.01em',
-            color: '#d1d8e8', background: 'rgba(255,255,255,0.05)',
-            border: '1px solid rgba(255,255,255,0.08)', borderRadius: '8px',
-            cursor: 'pointer', padding: '0.3rem 0.85rem',
-            transition: 'background 0.12s',
-          }}
-          onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(0,212,170,0.1)' }}
-          onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(0,212,170,0.06)' }}
+          className="font-jakarta text-[0.72rem] font-semibold tracking-[0.01em] text-[#d1d8e8] bg-white/5 hover:bg-[rgba(0,212,170,0.1)] border border-white/[0.08] rounded-lg cursor-pointer px-[0.85rem] py-[0.3rem] transition-colors"
         >
           ← Retour
         </button>
       </div>
 
       {/* Scrollable content */}
-      <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column' }}>
+      <div className="flex-1 overflow-y-auto flex flex-col">
 
         {/* Header row */}
-        <div style={{ display: 'flex' }}>
-          <div style={{ flex: 1, minWidth: 0, padding: isMobile ? '1.75rem 1rem 1.25rem' : '3rem 3.5rem 1.5rem' }}>
-            <div style={{ maxWidth: '800px' }}>
+        <div className="flex">
+          <div className={`flex-1 min-w-0 ${isMobile ? 'pt-7 px-4 pb-5' : 'pt-12 px-14 pb-6'}`}>
+            <div className="max-w-[800px]">
               <TradingPageHeader entry={entry} />
             </div>
           </div>
-          {!hidePanel && <div style={{ width: '260px', flexShrink: 0 }} />}
+          {!hidePanel && <div className="w-[260px] flex-shrink-0" />}
         </div>
 
         {/* Divider */}
-        <div style={{ height: '1px', background: 'rgba(0,212,170,0.07)' }} />
+        <div className="h-px bg-[rgba(0,212,170,0.07)]" />
 
         {/* Body row */}
-        <div style={{ display: 'flex', flex: 1 }}>
-          <div style={{ flex: 1, minWidth: 0, padding: isMobile ? '1.25rem 1rem 2rem' : '2rem 3.5rem 3rem' }}>
-            <div style={{ maxWidth: '800px' }}>
+        <div className="flex flex-1">
+          <div className={`flex-1 min-w-0 ${isMobile ? 'pt-5 px-4 pb-8' : 'pt-8 px-14 pb-12'}`}>
+            <div className="max-w-[800px]">
               <TradingPageBody entry={entry} />
             </div>
           </div>
@@ -497,19 +480,9 @@ function TradingDecorativePanel({ entry }) {
   const color = MARKET_COLORS[entry?.market] || '#00d4aa'
 
   return (
-    <div style={{
-      width: '260px',
-      flexShrink: 0,
-      position: 'relative',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      minHeight: '300px',
-      borderLeft: '1px solid rgba(0,212,170,0.07)',
-      background: '#080c12',
-    }}>
+    <div className="w-[260px] flex-shrink-0 relative flex items-center justify-center min-h-[300px] border-l border-[rgba(0,212,170,0.07)] bg-[#080c12]">
       {/* Grid pattern */}
-      <svg style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }}>
+      <svg className="absolute inset-0 w-full h-full">
         <defs>
           <pattern id="panelGrid" width="24" height="24" patternUnits="userSpaceOnUse">
             <path d="M 24 0 L 0 0 0 24" fill="none" stroke={color} strokeWidth="0.5" opacity="0.1" />
@@ -525,18 +498,10 @@ function TradingDecorativePanel({ entry }) {
       </svg>
 
       {/* Faint ticker */}
-      <p style={{
-        position: 'absolute',
-        fontFamily: '"Space Grotesk", sans-serif',
-        fontWeight: 700,
-        fontSize: '4rem',
-        letterSpacing: '-0.04em',
-        color: color,
-        opacity: 0.04,
-        userSelect: 'none',
-        textAlign: 'center',
-        padding: '0 1rem',
-      }}>
+      <p
+        className="absolute font-['Space_Grotesk'] font-bold text-[4rem] tracking-[-0.04em] text-[var(--c)] opacity-[0.04] select-none text-center px-4"
+        style={{ '--c': color }}
+      >
         {entry?.title?.toUpperCase()}
       </p>
     </div>
