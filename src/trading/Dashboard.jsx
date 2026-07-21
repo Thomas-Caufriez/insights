@@ -1,15 +1,17 @@
 import { useState, useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
-import { tradingCategories } from './data'
+import { tradingCategories, tradingEntries } from './data'
 import { useIsMobile } from '../hooks/useIsMobile'
 
 const NEON_GREEN = '#00ff88'
 const NEON_PINK  = '#ff2d78'
 const NEON_CYAN  = '#00f5ff'
 const NEON_PURP  = '#c44fff'
-const TEXT       = '#f5e6ff'
 const TEXT_DIM   = 'rgba(245,230,255,0.4)'
 const BORDER     = 'rgba(196,79,255,0.15)'
+
+// Shared premium input styling for the calculator widgets (focus glow).
+const FIELD_CLS = 'w-full box-border font-jakarta text-[0.9rem] text-tr-text bg-[rgba(0,245,255,0.03)] border border-tr-border rounded-lg px-3 py-[0.62rem] outline-none focus:border-[#00f5ff66] focus:bg-[rgba(0,245,255,0.06)] focus:shadow-[0_0_0_1px_#00f5ff33,0_0_16px_-4px_#00f5ff] transition-all placeholder:text-[rgba(245,230,255,0.25)]'
 
 const KZ_TZ = 'America/New_York'
 const KILL_ZONES = [
@@ -63,7 +65,7 @@ const GRID_BG = {
 
 // ─── Main ─────────────────────────────────────────────────────────────────────
 
-export default function TradingDashboard({ onSelectCategory, onHome, isMobile }) {
+export default function TradingDashboard({ onSelectCategory, onSelectEntry, onHome, isMobile }) {
   const isNarrow = useIsMobile(700)
   const [fearGreed, setFearGreed] = useState(null)
   const [prices, setPrices] = useState(null)
@@ -137,14 +139,85 @@ export default function TradingDashboard({ onSelectCategory, onHome, isMobile })
           {/* Row 2 — calendar full width */}
           <div className={`bg-tr-card ${isNarrow ? 'col-[1]' : 'col-span-3'}`}><CalendarWidget /></div>
 
-          {/* Row 3 — calculators */}
-          <div className="bg-tr-card"><BasicCalcWidget /></div>
+          {/* Row 3 — converter + position size */}
+          <div className="bg-tr-card"><ConverterWidget prices={prices} /></div>
           <div className={`bg-tr-card ${isNarrow ? 'col-[1]' : 'col-span-2'}`}><PositionSizeWidget prices={prices} /></div>
 
         </div>
 
+        {/* ─── Learning cards — the ICT/SMC curriculum ─── */}
+        <LearnSection onSelectEntry={onSelectEntry} onSelectCategory={onSelectCategory} />
+
       </div>
     </div>
+  )
+}
+
+// ─── Learning cards under the bento ───────────────────────────────────────────
+
+function LearnSection({ onSelectEntry, onSelectCategory }) {
+  return (
+    <div className="mt-10 flex flex-col gap-9">
+      <div className="flex items-center gap-3">
+        <span className="font-sans font-extrabold text-[1.05rem] tracking-[0.04em] text-tr-text [text-shadow:0_0_18px_#c44fff66]">
+          Apprendre
+        </span>
+        <span className="font-spacemono text-[0.6rem] text-tr-dim">ICT · Smart Money Concepts</span>
+        <div className="flex-1 h-px bg-tr-border" />
+      </div>
+
+      {tradingCategories.map((cat) => {
+        const cards = tradingEntries.filter((e) => cat.entryIds.includes(e.id))
+        if (!cards.length) return null
+        return (
+          <div key={cat.id} style={{ '--c': cat.color }}>
+            {/* Category header */}
+            <button
+              onClick={() => onSelectCategory?.(cat.id)}
+              className="group flex items-center gap-2 mb-3 bg-transparent border-none cursor-pointer p-0"
+            >
+              <span
+                className="w-2 h-2 rounded-full flex-shrink-0"
+                style={{ background: cat.color, boxShadow: `0 0 8px ${cat.color}` }}
+              />
+              <span className="font-sans text-[0.92rem] font-bold text-tr-text group-hover:text-[var(--c)] transition-colors">
+                {cat.fullLabel}
+              </span>
+              <span className="font-spacemono text-[0.6rem] text-tr-dim">{cards.length} fiches →</span>
+            </button>
+
+            {/* Cards */}
+            <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(210px, 1fr))' }}>
+              {cards.map((e) => (
+                <LearnCard key={e.id} entry={e} color={cat.color} onClick={() => onSelectEntry?.(e.id)} />
+              ))}
+            </div>
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
+function LearnCard({ entry, color, onClick }) {
+  return (
+    <button
+      onClick={onClick}
+      style={{ '--c': color }}
+      className="flex flex-col text-left bg-tr-card border border-tr-border rounded-xl p-4 cursor-pointer transition-[border-color,box-shadow,transform] duration-200 hover:border-[var(--c)] hover:shadow-[0_0_22px_-6px_var(--c)] hover:-translate-y-0.5"
+    >
+      <span className="font-jakarta text-[0.56rem] font-bold uppercase tracking-[0.1em] text-[var(--c)] mb-[0.55rem]">
+        {entry.market}
+      </span>
+      <span className="font-jakarta text-[0.95rem] font-extrabold text-tr-text leading-[1.15] mb-[0.3rem]">
+        {entry.title}
+      </span>
+      {entry.subtitle && (
+        <span className="font-jakarta text-[0.72rem] text-tr-dim leading-[1.4]">
+          {entry.subtitle}
+        </span>
+      )}
+    </button>
   )
 }
 
@@ -197,6 +270,7 @@ function LivePricesWidget({ onFearGreed, onPrices }) {
       eurusd: eur?.rate,
       gbpusd: gbp?.price,
       usdjpy: jpy?.price,
+      jpyusd: jpy?.price ? 1 / jpy.price : null,   // inverted, matches the ticker card
       qqq:    qqq?.price,
     })
   }, [btc, eth, eur, gbp, jpy, qqq])
@@ -759,7 +833,9 @@ function CalendarWidget() {
   useEffect(() => {
     async function load() {
       try {
-        const res = await fetch(GIST_URL)
+        // Cache-bust: the gist refreshes hourly, so always pull a fresh copy
+        // rather than a stale browser/CDN-cached one.
+        const res = await fetch(`${GIST_URL}?t=${Date.now()}`, { cache: 'no-store' })
         if (!res.ok) return
         const data = await res.json()
         const now = new Date()
@@ -905,171 +981,120 @@ function EventRow({ e, fmtTime, isReleased, isPast }) {
 
 // ─── Basic calculator ─────────────────────────────────────────────────────────
 
-function BasicCalcWidget() {
-  const [display, setDisplay]     = useState('0')
-  const [prev, setPrev]           = useState(null)
-  const [op, setOp]               = useState(null)
-  const [expression, setExpression] = useState('')
-  const [resetNext, setResetNext] = useState(false)
+// ─── Quick converter ──────────────────────────────────────────────────────────
+// Converts between the assets the ticker already prices, pivoting through USD.
+// Zero new API calls — pure reuse of the fetched prices. `usd` = USD value of 1 unit.
+const CONV_ASSETS = [
+  { id: 'USD', usd: () => 1 },
+  { id: 'EUR', usd: p => p?.eurusd },
+  { id: 'GBP', usd: p => p?.gbpusd },
+  { id: 'JPY', usd: p => p?.jpyusd },
+  { id: 'BTC', usd: p => p?.btc },
+  { id: 'ETH', usd: p => p?.eth },
+]
 
-  function pressDigit(d) {
-    if (resetNext) { setDisplay(d); setResetNext(false); return }
-    if (display.replace('-', '').replace('.', '').length >= 9) return
-    setDisplay(display === '0' ? d : display + d)
+function convert(amount, fromId, toId, prices) {
+  const a = parseFloat(amount)
+  if (!Number.isFinite(a)) return null
+  const fu = CONV_ASSETS.find(x => x.id === fromId)?.usd(prices)
+  const tu = CONV_ASSETS.find(x => x.id === toId)?.usd(prices)
+  if (!fu || !tu) return { needRate: true }
+  return a * (fu / tu)
+}
+
+function ConverterWidget({ prices }) {
+  const [amount, setAmount] = useState('1')
+  const [from,   setFrom]   = useState('BTC')
+  const [to,     setTo]     = useState('EUR')
+
+  const out  = convert(amount, from, to, prices)
+  const rate = convert('1', from, to, prices)   // 1 <from> = ? <to>
+  const ready = typeof out === 'number'
+
+  function swap() {
+    setFrom(to)
+    setTo(from)
+    if (ready) setAmount(String(+out.toFixed(8)))
   }
-
-  function pressDecimal() {
-    if (resetNext) { setDisplay('0.'); setResetNext(false); return }
-    if (!display.includes('.')) setDisplay(display + '.')
-  }
-
-  function compute(a, b, o) {
-    if (o === '+') return a + b
-    if (o === '−') return a - b
-    if (o === '×') return a * b
-    if (o === '÷') return b !== 0 ? a / b : 0
-    return b
-  }
-
-  function fmt(n) {
-    if (!isFinite(n) || isNaN(n)) return '0'
-    const s = parseFloat(n.toFixed(8)).toString()
-    return s.length > 10 ? parseFloat(n.toPrecision(5)).toString() : s
-  }
-
-  function pressOp(nextOp) {
-    const cur = parseFloat(display)
-    if (prev !== null && !resetNext) {
-      const res = fmt(compute(prev, cur, op))
-      setDisplay(res); setPrev(parseFloat(res))
-      setExpression(`${res} ${nextOp}`)
-    } else {
-      setPrev(cur)
-      setExpression(`${display} ${nextOp}`)
-    }
-    setOp(nextOp); setResetNext(true)
-  }
-
-  function pressEquals() {
-    if (op === null || prev === null) return
-    const cur = parseFloat(display)
-    const res = fmt(compute(prev, cur, op))
-    setExpression(`${prev} ${op} ${display} =`)
-    setDisplay(res); setPrev(null); setOp(null); setResetNext(true)
-  }
-
-  function pressClear() {
-    setDisplay('0'); setPrev(null); setOp(null); setResetNext(false)
-    setExpression('')
-  }
-
-  function pressNegate() {
-    if (display === '0') return
-    setDisplay(display.startsWith('-') ? display.slice(1) : '-' + display)
-  }
-
-  function pressPercent() {
-    setDisplay(fmt(parseFloat(display) / 100))
-  }
-
-  const btns = [
-    { label: 'C',  onPress: pressClear,              type: 'clear' },
-    { label: '±',  onPress: pressNegate,              type: 'fn' },
-    { label: '%',  onPress: pressPercent,             type: 'fn' },
-    { label: '÷',  onPress: () => pressOp('÷'),       type: 'op' },
-    { label: '7',  onPress: () => pressDigit('7') },
-    { label: '8',  onPress: () => pressDigit('8') },
-    { label: '9',  onPress: () => pressDigit('9') },
-    { label: '×',  onPress: () => pressOp('×'),       type: 'op' },
-    { label: '4',  onPress: () => pressDigit('4') },
-    { label: '5',  onPress: () => pressDigit('5') },
-    { label: '6',  onPress: () => pressDigit('6') },
-    { label: '−',  onPress: () => pressOp('−'),       type: 'op' },
-    { label: '1',  onPress: () => pressDigit('1') },
-    { label: '2',  onPress: () => pressDigit('2') },
-    { label: '3',  onPress: () => pressDigit('3') },
-    { label: '+',  onPress: () => pressOp('+'),       type: 'op' },
-    { label: '0',  onPress: () => pressDigit('0'),    span: 2 },
-    { label: '.',  onPress: pressDecimal },
-    { label: '=',  onPress: pressEquals,              type: 'eq' },
-  ]
-
-  const btnColor = (type) => {
-    if (type === 'clear') return NEON_PINK
-    if (type === 'op')    return NEON_PURP
-    if (type === 'eq')    return NEON_CYAN
-    if (type === 'fn')    return TEXT_DIM
-    return TEXT
-  }
-
-  const btnBg = (type) => {
-    if (type === 'eq') return `${NEON_CYAN}18`
-    if (type === 'op') return `${NEON_PURP}10`
-    return 'rgba(196,79,255,0.05)'
-  }
-
-  const fontSize = display.length > 8 ? '1.1rem' : display.length > 5 ? '1.3rem' : '1.5rem'
 
   return (
-    <div className="py-[1.1rem] px-[1.2rem] flex flex-col gap-2">
-      <p className={`${labelCls} mb-2`}>Calculatrice</p>
-      <div className="bg-[rgba(196,79,255,0.05)] border border-tr-border rounded-lg overflow-hidden">
-        <div className="px-[0.8rem] pt-1 text-right min-h-[1rem]">
-          <span className="font-jakarta text-[0.58rem] text-tr-dim">
-            {expression}
-          </span>
-        </div>
-        <div className="pt-[0.1rem] px-[0.8rem] pb-[0.35rem] text-right">
-          <span className="font-jakarta text-tr-text transition-[font-size] duration-100" style={{ fontSize }}>
-            {display}
-          </span>
-        </div>
+    <div className="p-5 flex flex-col gap-3 h-full">
+      <div className="flex items-center justify-between">
+        <p className={labelCls}>Convertisseur</p>
+        <span className="flex items-center gap-[0.35rem] font-spacemono text-[0.52rem] font-bold uppercase tracking-[0.12em] text-[#00f5ff99]">
+          <span className="w-1.5 h-1.5 rounded-full bg-neon-cyan shadow-[0_0_6px_#00f5ff,0_0_12px_#00f5ff88]" />
+          live
+        </span>
       </div>
-      <div className="grid grid-cols-4 gap-[0.28rem]">
-        {btns.map((b, i) => (
-          <button
-            key={i}
-            onClick={b.onPress}
-            className="font-jakarta text-[0.92rem] font-semibold rounded-md py-[0.55rem] cursor-pointer transition-[background,box-shadow] duration-[120ms]"
-            style={{
-              gridColumn: b.span ? `span ${b.span}` : undefined,
-              color: btnColor(b.type),
-              background: btnBg(b.type),
-              border: `1px solid ${b.type === 'eq' ? `${NEON_CYAN}33` : b.type === 'op' ? `${NEON_PURP}22` : BORDER}`,
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = `${btnColor(b.type)}22`
-              e.currentTarget.style.boxShadow = `0 0 8px ${btnColor(b.type)}33`
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = btnBg(b.type)
-              e.currentTarget.style.boxShadow = 'none'
-            }}
-          >
-            {b.label}
-          </button>
+
+      {/* From */}
+      <div className="flex gap-2">
+        <input className={`${FIELD_CLS} flex-1 min-w-0`} inputMode="decimal" value={amount} onChange={e => setAmount(e.target.value)} />
+        <AssetSelect value={from} onChange={setFrom} />
+      </div>
+
+      {/* Swap */}
+      <div className="flex justify-center -my-1.5">
+        <button
+          onClick={swap}
+          className="text-[0.85rem] text-neon-cyan bg-[rgba(0,245,255,0.08)] border border-[#00f5ff33] rounded-full w-8 h-8 flex items-center justify-center cursor-pointer hover:bg-[rgba(0,245,255,0.18)] hover:shadow-[0_0_14px_-3px_#00f5ff] hover:rotate-180 transition-all duration-300"
+          aria-label="Inverser"
+        >⇅</button>
+      </div>
+
+      {/* Result */}
+      <div className="flex gap-2">
+        <div className="flex-1 min-w-0 rounded-xl border border-tr-border bg-[linear-gradient(135deg,rgba(0,245,255,0.07),rgba(196,79,255,0.03))] px-3 py-2 flex flex-col justify-center gap-[0.15rem]">
+          <span className="font-sans text-[0.55rem] font-bold uppercase tracking-[0.1em] text-[#00f5ff99]">Résultat</span>
+          <span className="font-jakarta text-[1.35rem] font-extrabold text-neon-cyan leading-none tracking-[-0.02em] truncate [text-shadow:0_0_16px_rgba(0,245,255,0.35)]">
+            {out == null ? '—' : ready ? fmtQty(out) : '…'}
+          </span>
+        </div>
+        <AssetSelect value={to} onChange={setTo} />
+      </div>
+
+      {/* Rate line */}
+      <p className="mt-auto pt-1 font-spacemono text-[0.56rem] text-tr-dim leading-snug">
+        {rate && typeof rate === 'number'
+          ? `1 ${from} = ${fmtQty(rate)} ${to} · taux du ticker`
+          : 'En attente des taux…'}
+      </p>
+    </div>
+  )
+}
+
+function AssetSelect({ value, onChange }) {
+  return (
+    <div className="relative flex-shrink-0">
+      <select
+        value={value}
+        onChange={e => onChange(e.target.value)}
+        className="appearance-none h-full font-jakarta text-[0.85rem] font-bold text-neon-cyan bg-[rgba(0,245,255,0.07)] border border-[#00f5ff33] rounded-lg pl-3.5 pr-7 py-[0.62rem] outline-none focus:border-[#00f5ff88] hover:bg-[rgba(0,245,255,0.13)] cursor-pointer transition-colors"
+      >
+        {CONV_ASSETS.map(a => (
+          <option key={a.id} value={a.id} className="bg-tr-card text-tr-text">{a.id}</option>
         ))}
-      </div>
+      </select>
+      <span className="pointer-events-none absolute right-[0.55rem] top-1/2 -translate-y-1/2 text-[0.55rem] text-neon-cyan">▾</span>
     </div>
   )
 }
 
 // ─── Position size calculator ─────────────────────────────────────────────────
 
-const CCY_SYM = { USD: '$', EUR: '€', JPY: '¥' }
-
-// Scoped to the instruments the dashboard already tracks — quote currency known,
-// so conversions only ever need EUR/USD or USD/JPY, which are already fetched.
+// Scoped to the instruments the dashboard already tracks — quote currency known.
+// Every pair here is USD-quoted (JPY/USD is the inverted display used by the ticker),
+// so the only currency conversion ever needed is the account toggle's EUR/USD.
 const INSTRUMENTS = [
-  { id: 'btc',    label: 'BTC/USDT', kind: 'crypto', quote: 'USD', priceKey: 'btc' },
-  { id: 'eth',    label: 'ETH/USDT', kind: 'crypto', quote: 'USD', priceKey: 'eth' },
-  { id: 'eurusd', label: 'EUR/USD',  kind: 'forex',  quote: 'USD', pip: 0.0001, contract: 100000, priceKey: 'eurusd' },
-  { id: 'gbpusd', label: 'GBP/USD',  kind: 'forex',  quote: 'USD', pip: 0.0001, contract: 100000, priceKey: 'gbpusd' },
-  { id: 'usdjpy', label: 'USD/JPY',  kind: 'forex',  quote: 'JPY', pip: 0.01,   contract: 100000, priceKey: 'usdjpy' },
-  { id: 'qqq',    label: 'NASDAQ',   kind: 'stock',  quote: 'USD', priceKey: 'qqq' },
+  { id: 'btc',    label: 'BTC/USDT', kind: 'crypto', quote: 'USD', unit: 'BTC',     priceKey: 'btc' },
+  { id: 'eth',    label: 'ETH/USDT', kind: 'crypto', quote: 'USD', unit: 'ETH',     priceKey: 'eth' },
+  { id: 'eurusd', label: 'EUR/USD',  kind: 'forex',  quote: 'USD', unit: 'EUR', pip: 0.0001,    contract: 100000, priceKey: 'eurusd' },
+  { id: 'gbpusd', label: 'GBP/USD',  kind: 'forex',  quote: 'USD', unit: 'GBP', pip: 0.0001,    contract: 100000, priceKey: 'gbpusd' },
+  { id: 'jpyusd', label: 'JPY/USD',  kind: 'forex',  quote: 'USD', unit: 'JPY', pip: 0.000001,  contract: 100000, priceKey: 'jpyusd' },
+  { id: 'qqq',    label: 'NASDAQ',   kind: 'stock',  quote: 'USD', unit: 'actions', priceKey: 'qqq' },
 ]
 
-function computePosition({ inst, capital, riskPct, entry, stop, acctCcy, prices }) {
+function computePosition({ inst, capital, riskPct, entry, stop }) {
   const cap = parseFloat(capital)
   const rp  = parseFloat(riskPct)
   const e   = parseFloat(entry)
@@ -1078,20 +1103,10 @@ function computePosition({ inst, capital, riskPct, entry, stop, acctCcy, prices 
   const stopDist = Math.abs(e - s)
   if (stopDist <= 0) return null
 
-  const riskAcct = cap * (rp / 100)
-
-  // account currency → USD
-  let riskUSD
-  if (acctCcy === 'USD') riskUSD = riskAcct
-  else { if (!prices?.eurusd) return { needRate: 'EUR/USD', riskAcct }; riskUSD = riskAcct * prices.eurusd }
-
-  // USD → instrument quote currency
-  let riskQuote
-  if (inst.quote === 'USD') riskQuote = riskUSD
-  else { if (!prices?.usdjpy) return { needRate: 'USD/JPY', riskAcct }; riskQuote = riskUSD * prices.usdjpy }
-
-  const units    = riskQuote / stopDist
-  const out = { riskAcct, stopDist, units, notional: units * e }
+  // Everything is USD: account is USD and every instrument is USD-quoted.
+  const riskUSD = cap * (rp / 100)
+  const units   = riskUSD / stopDist
+  const out = { riskAcct: riskUSD, stopDist, units, notional: units * e }
   if (inst.kind === 'forex') {
     out.lots     = units / inst.contract
     out.pips     = stopDist / inst.pip
@@ -1110,45 +1125,41 @@ function fmtMoney(n, dp = 2) {
   if (!Number.isFinite(n)) return '—'
   return n.toLocaleString('en-US', { minimumFractionDigits: dp, maximumFractionDigits: dp })
 }
-
+// Round a live price DOWN to a clean level (~1% granularity) — a tidy long-bias
+// starting stop that sits just below entry. User edits from there.
+function roundStop(live) {
+  if (!Number.isFinite(live) || live <= 0) return null
+  const step = Math.pow(10, Math.floor(Math.log10(live)) - 2)
+  return parseFloat((Math.floor(live / step) * step).toPrecision(12))
+}
 function PositionSizeWidget({ prices }) {
   const [instId,  setInstId]  = useState('btc')
-  const [acct,    setAcct]    = useState('USD')
   const [capital, setCapital] = useState('10000')
   const [riskPct, setRiskPct] = useState('1')
   const [entry,   setEntry]   = useState('')
   const [stop,    setStop]    = useState('')
 
-  const inst = INSTRUMENTS.find(i => i.id === instId)
-  const live = prices?.[inst.priceKey]
-  const res  = computePosition({ inst, capital, riskPct, entry, stop, acctCcy: acct, prices })
+  const inst     = INSTRUMENTS.find(i => i.id === instId)
+  const live     = prices?.[inst.priceKey]
+  const stopFill = live != null ? roundStop(live) : null
+  const res      = computePosition({ inst, capital, riskPct, entry, stop })
 
-  const inputCls = 'w-full box-border font-jakarta text-[0.82rem] text-tr-text bg-[rgba(196,79,255,0.05)] border border-tr-border rounded-md px-2 py-[0.35rem] outline-none focus:border-[#00f5ff88] transition-colors'
+  const inputCls = FIELD_CLS
 
   return (
-    <div className="py-[1.1rem] px-[1.2rem] flex flex-col gap-3 h-full">
+    <div className="p-5 flex flex-col gap-3.5 h-full">
       <div className="flex items-center justify-between">
         <p className={labelCls}>Taille de position</p>
-        <div className="flex gap-1">
-          {['USD', 'EUR'].map(c => (
-            <button
-              key={c}
-              onClick={() => setAcct(c)}
-              className={`font-jakarta text-[0.62rem] font-semibold rounded-full px-2 py-[0.15rem] border transition-colors ${acct === c ? 'text-neon-cyan bg-[#00f5ff12] border-[#00f5ff44]' : 'text-tr-dim bg-transparent border-tr-border'}`}
-            >
-              {c}
-            </button>
-          ))}
-        </div>
+        <span className="font-spacemono text-[0.52rem] font-bold uppercase tracking-[0.12em] text-[#00f5ff99] border border-[#00f5ff33] rounded-full px-2 py-[0.12rem]">USD</span>
       </div>
 
       {/* Instrument pills */}
-      <div className="flex flex-wrap gap-1">
+      <div className="flex flex-wrap gap-1.5">
         {INSTRUMENTS.map(i => (
           <button
             key={i.id}
             onClick={() => setInstId(i.id)}
-            className={`font-jakarta text-[0.66rem] font-semibold rounded-md px-[0.5rem] py-[0.2rem] border transition-colors ${instId === i.id ? 'text-tr-text bg-[rgba(196,79,255,0.12)] border-[rgba(196,79,255,0.4)]' : 'text-tr-dim bg-transparent border-tr-border hover:text-tr-text'}`}
+            className={`font-jakarta text-[0.66rem] font-semibold rounded-lg px-[0.6rem] py-[0.3rem] border transition-all ${instId === i.id ? 'text-neon-cyan bg-[rgba(0,245,255,0.1)] border-[#00f5ff55] shadow-[0_0_12px_-3px_#00f5ff]' : 'text-tr-dim bg-[rgba(196,79,255,0.04)] border-tr-border hover:text-tr-text hover:border-[rgba(196,79,255,0.35)]'}`}
           >
             {i.label}
           </button>
@@ -1157,33 +1168,59 @@ function PositionSizeWidget({ prices }) {
 
       {/* Inputs */}
       <div className="grid grid-cols-2 gap-2">
-        <Field label={`Capital (${CCY_SYM[acct]})`}>
+        <Field label="Capital ($)">
           <input className={inputCls} inputMode="decimal" value={capital} onChange={e => setCapital(e.target.value)} />
         </Field>
         <Field label="Risque (%)">
           <input className={inputCls} inputMode="decimal" value={riskPct} onChange={e => setRiskPct(e.target.value)} />
         </Field>
-        <Field label="Entrée" hint={live != null ? `live ${fmtQty(live)}` : null} onHint={() => live != null && setEntry(String(live))}>
-          <input className={inputCls} inputMode="decimal" value={entry} onChange={e => setEntry(e.target.value)} placeholder={live != null ? fmtQty(live) : '—'} />
+        <Field label="Entrée">
+          <div className="relative">
+            <input className={`${inputCls} ${live != null ? 'pr-[3.4rem]' : ''}`} inputMode="decimal" value={entry} onChange={e => setEntry(e.target.value)} placeholder={live != null ? fmtQty(live) : '—'} />
+            {live != null && (
+              <button
+                onClick={() => setEntry(String(live))}
+                className="absolute right-[0.35rem] top-1/2 -translate-y-1/2 font-spacemono text-[0.62rem] font-bold uppercase tracking-[0.06em] text-neon-cyan bg-[rgba(0,245,255,0.1)] border border-[#00f5ff44] rounded-md px-[0.45rem] py-[0.28rem] hover:bg-[rgba(0,245,255,0.2)] cursor-pointer transition-colors"
+              >
+                live
+              </button>
+            )}
+          </div>
         </Field>
         <Field label="Stop-loss">
-          <input className={inputCls} inputMode="decimal" value={stop} onChange={e => setStop(e.target.value)} />
+          <div className="relative">
+            <input className={`${inputCls} ${stopFill != null ? 'pr-[3.4rem]' : ''}`} inputMode="decimal" value={stop} onChange={e => setStop(e.target.value)} placeholder={stopFill != null ? fmtQty(stopFill) : '—'} />
+            {stopFill != null && (
+              <button
+                onClick={() => setStop(String(stopFill))}
+                className="absolute right-[0.35rem] top-1/2 -translate-y-1/2 font-spacemono text-[0.62rem] font-bold uppercase tracking-[0.06em] text-neon-cyan bg-[rgba(0,245,255,0.1)] border border-[#00f5ff44] rounded-md px-[0.45rem] py-[0.28rem] hover:bg-[rgba(0,245,255,0.2)] cursor-pointer transition-colors"
+              >
+                live
+              </button>
+            )}
+          </div>
         </Field>
       </div>
 
       {/* Results */}
-      <div className="mt-auto rounded-lg border border-tr-border bg-[rgba(196,79,255,0.04)] p-3 flex flex-col gap-1.5">
+      <div className="mt-auto rounded-xl border border-tr-border bg-[linear-gradient(135deg,rgba(0,245,255,0.07),rgba(196,79,255,0.03))] p-3.5">
         {!res ? (
           <p className="font-sans text-[0.75rem] text-tr-dim italic">Renseigne capital, risque, entrée et stop.</p>
-        ) : res.needRate ? (
-          <p className="font-sans text-[0.75rem] text-tr-dim italic">En attente du taux {res.needRate}…</p>
         ) : (
           <>
-            <ResRow label="Risque" value={`${CCY_SYM[acct]}${fmtMoney(res.riskAcct)}`} accent />
-            <ResRow label="Distance" value={inst.kind === 'forex' ? `${fmtQty(res.stopDist)} · ${fmtMoney(res.pips, 1)} pips` : fmtQty(res.stopDist)} />
-            <ResRow label="Taille" value={inst.kind === 'forex' ? `${fmtMoney(res.lots, 2)} lots · ${fmtQty(res.units)} u.` : `${fmtQty(res.units)} unités`} accent />
-            {inst.kind === 'forex' && <ResRow label="Valeur du pip" value={`${CCY_SYM[inst.quote]}${fmtMoney(res.pipValue)}`} />}
-            <ResRow label="Valeur position" value={`${CCY_SYM[inst.quote]}${fmtMoney(res.notional, inst.quote === 'JPY' ? 0 : 2)}`} />
+            <div className="flex items-end justify-between gap-2">
+              <span className="font-sans text-[0.6rem] font-bold uppercase tracking-[0.1em] text-[#00f5ff99] pb-[0.2rem]">Taille</span>
+              <span className="font-jakarta text-[1.5rem] font-extrabold text-neon-cyan leading-none tracking-[-0.02em] truncate [text-shadow:0_0_18px_rgba(0,245,255,0.4)]">
+                {inst.kind === 'forex' ? `${fmtMoney(res.lots, 2)} lots` : `${fmtQty(res.units)} ${inst.unit}`}
+              </span>
+            </div>
+            <div className="h-px bg-tr-border my-2.5" />
+            <div className="grid grid-cols-2 gap-x-3 gap-y-2">
+              <MiniStat label="Risque"          value={`$${fmtMoney(res.riskAcct)}`} />
+              <MiniStat label="Distance"        value={inst.kind === 'forex' ? `${fmtMoney(res.pips, 1)} pips` : fmtQty(res.stopDist)} />
+              <MiniStat label="Valeur position" value={`$${fmtMoney(res.notional)}`} />
+              {inst.kind === 'forex' && <MiniStat label="Valeur du pip" value={`$${fmtMoney(res.pipValue)}`} />}
+            </div>
           </>
         )}
       </div>
@@ -1191,27 +1228,20 @@ function PositionSizeWidget({ prices }) {
   )
 }
 
-function Field({ label, hint, onHint, children }) {
+function Field({ label, children }) {
   return (
     <div className="flex flex-col">
-      <div className="flex items-center justify-between mb-1">
-        <span className="font-sans text-[0.62rem] uppercase tracking-[0.08em] text-tr-dim">{label}</span>
-        {hint && (
-          <button onClick={onHint} className="font-jakarta text-[0.58rem] text-neon-cyan hover:underline cursor-pointer bg-transparent border-none p-0">
-            {hint}
-          </button>
-        )}
-      </div>
+      <span className="font-sans text-[0.6rem] font-semibold uppercase tracking-[0.08em] text-tr-dim mb-[0.3rem]">{label}</span>
       {children}
     </div>
   )
 }
 
-function ResRow({ label, value, accent }) {
+function MiniStat({ label, value }) {
   return (
-    <div className="flex items-center justify-between">
-      <span className="font-sans text-[0.72rem] text-tr-dim">{label}</span>
-      <span className={`font-jakarta text-[0.82rem] font-bold ${accent ? 'text-neon-cyan' : 'text-tr-text'}`}>{value}</span>
+    <div className="flex flex-col gap-[0.15rem] min-w-0">
+      <span className="font-spacemono text-[0.53rem] uppercase tracking-[0.08em] text-tr-dim">{label}</span>
+      <span className="font-jakarta text-[0.92rem] font-bold text-tr-text truncate">{value}</span>
     </div>
   )
 }

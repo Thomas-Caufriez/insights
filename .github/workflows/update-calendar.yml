@@ -14,16 +14,29 @@ jobs:
           GIST_ID: 2074909e9bd9b4bc27ab9884059c2d1b
           GITHUB_TOKEN: ${{ secrets.GIST_TOKEN }}
         run: |
-          DATA=$(curl -s "https://nfs.faireconomy.media/ff_calendar_thisweek.json")
-          if [ -z "$DATA" ] || [ "$DATA" = "null" ]; then
-            echo "Fetch failed, skipping."
-            exit 0
+          set -euo pipefail
+
+          # 1. Fetch upstream and verify it's a non-empty JSON array
+          DATA=$(curl -sf "https://nfs.faireconomy.media/ff_calendar_thisweek.json")
+          COUNT=$(printf '%s' "$DATA" | jq 'if type=="array" then length else -1 end')
+          if [ "$COUNT" -le 0 ]; then
+            echo "::error::Upstream feed invalid or empty (count=$COUNT)."
+            exit 1
           fi
+          echo "Fetched $COUNT events from Forex Factory."
+
+          # 2. PATCH the gist, capturing the HTTP status so failures are LOUD
           PAYLOAD=$(jq -n --arg content "$DATA" \
             '{"files":{"ff_calendar.json":{"content":$content}}}')
-          curl -s -X PATCH \
+          STATUS=$(curl -s -o /tmp/gist_resp.json -w '%{http_code}' -X PATCH \
             -H "Authorization: token $GITHUB_TOKEN" \
             -H "Content-Type: application/json" \
             -d "$PAYLOAD" \
-            "https://api.github.com/gists/$GIST_ID"
-          echo "Gist updated."
+            "https://api.github.com/gists/$GIST_ID")
+
+          if [ "$STATUS" != "200" ]; then
+            echo "::error::Gist update failed (HTTP $STATUS). Token likely expired or lacks 'gist' scope."
+            head -c 400 /tmp/gist_resp.json
+            exit 1
+          fi
+          echo "Gist updated successfully ($COUNT events)."

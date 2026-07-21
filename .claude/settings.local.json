@@ -21,7 +21,18 @@
       "Bash(git:*)",
       "Bash(printf '#!/bin/bash\\\\necho \"git hook ran\" > /c/Users/thcau/Documents/GitHub/insights/hook_test.txt\\\\n')",
       "Bash(chmod +x /c/Users/thcau/Documents/GitHub/insights/.git/hooks/post-commit)",
-      "PowerShell(npm run *)"
+      "PowerShell(npm run *)",
+      "Bash(npm run *)",
+      "Read(//tmp/**)",
+      "Bash(node -e \"const d=require\\('/tmp/ffcal.json'\\); console.log\\('count',d.length\\); const ds=d.map\\(e=>e.date\\).sort\\(\\); console.log\\('min',ds[0]\\); console.log\\('max',ds[ds.length-1]\\); const today=new Date\\(\\).toISOString\\(\\).slice\\(0,10\\); console.log\\('today',today\\); console.log\\('today events', d.filter\\(e=>e.date.slice\\(0,10\\)===today\\).length\\);\")",
+      "Bash(gh workflow *)",
+      "Bash(gh run *)",
+      "PowerShell(gh *)",
+      "Bash(node -e \"const g=require\\('C:/Users/Thomas/AppData/Local/Temp/gist_api.json'.replace\\('C:/Users/Thomas/AppData/Local/Temp','/tmp'\\)\\);\")",
+      "Bash(python -c \"import json;d=json.load\\(open\\('/tmp/gist_api.json'\\)\\);f=d['files']['ff_calendar.json'];print\\('updated_at:',d['updated_at']\\);print\\('size:',f['size']\\);import re;dates=re.findall\\(r'\\\\\"date\\\\\":\\\\\"\\([0-9T:+-]+\\)\\\\\"',f['content']\\);dates.sort\\(\\);print\\('newest event:',dates[-1] if dates else 'NONE'\\);print\\('count:',len\\(dates\\)\\)\")",
+      "Bash(python -c ' *)",
+      "Bash(grep -iE '\\\\.\\(docx?|odt\\)$')",
+      "Read(//c/Users/Thomas/Downloads//**)"
     ]
   }
 }

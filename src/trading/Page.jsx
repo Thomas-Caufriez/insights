@@ -1,8 +1,15 @@
+import { getTradingIllustration } from './illustrations'
+
 const ACCENT = '#00f5ff'
 
 const MARKET_COLORS = {
   'Crypto':             '#ff9900',
-  'Forex':              '#00f5ff',
+  'Forex':              '#00d4aa',
+  'Structure':          '#c44fff',
+  'Liquidité':          '#ff2d78',
+  'PD Array':           '#00f5ff',
+  'Exécution':          '#00ff88',
+  'Risque':             '#f4c542',
   'Actions':            '#c44fff',
   'Matières premières': '#ffd700',
   'Analyse technique':  '#ff2d78',
@@ -43,9 +50,19 @@ export function TradingPageHeader({ entry }) {
   )
 }
 
-export function TradingPageBody({ entry }) {
+export function TradingPageBody({ entry, showIllustration }) {
+  const Ill = getTradingIllustration(entry.illustration)
+  const marketColor = MARKET_COLORS[entry.market] || ACCENT
   return (
-    <div className="flex gap-12 flex-wrap">
+    <div className="flex flex-col gap-8">
+
+      {showIllustration && Ill && (
+        <div className="rounded-xl border border-tr-border bg-[#0e0018] px-4 py-5 flex items-center justify-center">
+          <div className="w-full max-w-[300px]"><Ill color={marketColor} /></div>
+        </div>
+      )}
+
+      <div className="flex gap-12 flex-wrap">
 
       {entry.stats?.length > 0 && (
         <>
@@ -85,6 +102,8 @@ export function TradingPageBody({ entry }) {
             </p>
           </div>
         )}
+      </div>
+
       </div>
     </div>
   )

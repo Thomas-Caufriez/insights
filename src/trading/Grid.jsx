@@ -104,7 +104,7 @@ export default function TradingGrid({ entries, filterId, onSelect, isMobile, onB
         )}
 
         {/* Grid */}
-        <div className="grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-px">
+        <div className="grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-4">
           {visible.map((e) => <TradingCard key={e.id} entry={e} color={color} onClick={() => onSelect(e.id)} />)}
         </div>
       </div>
@@ -133,13 +133,15 @@ function TradingCard({ entry, color, onClick }) {
     <button
       onClick={onClick}
       style={{ '--c': color }}
-      className="flex flex-col h-full text-left p-0 bg-tr-card border-none rounded-none overflow-hidden cursor-pointer transition-colors"
+      className="flex flex-col h-full text-left p-0 bg-tr-card border border-tr-border rounded-xl overflow-hidden cursor-pointer transition-[border-color,box-shadow,background] duration-200"
       onMouseEnter={(e) => {
         e.currentTarget.style.background = CARD_HOV
-        e.currentTarget.style.boxShadow = `inset 0 0 0 1px ${color}33, 0 0 20px ${color}11`
+        e.currentTarget.style.borderColor = `${color}66`
+        e.currentTarget.style.boxShadow = `0 0 24px -6px ${color}`
       }}
       onMouseLeave={(e) => {
         e.currentTarget.style.background = CARD_BG
+        e.currentTarget.style.borderColor = ''
         e.currentTarget.style.boxShadow = 'none'
       }}
     >
@@ -161,7 +163,7 @@ function TradingCard({ entry, color, onClick }) {
             {entry.risk}
           </span>
         )}
-        <span className="font-jakarta font-extrabold text-[2.4rem] text-[var(--c)] opacity-[0.04] select-none absolute tracking-[-0.02em]">
+        <span className="font-jakarta font-extrabold text-[2.4rem] text-[var(--c)] opacity-[0.11] select-none absolute tracking-[-0.02em]">
           {entry.title}
         </span>
       </div>
