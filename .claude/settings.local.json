@@ -32,7 +32,28 @@
       "Bash(python -c \"import json;d=json.load\\(open\\('/tmp/gist_api.json'\\)\\);f=d['files']['ff_calendar.json'];print\\('updated_at:',d['updated_at']\\);print\\('size:',f['size']\\);import re;dates=re.findall\\(r'\\\\\"date\\\\\":\\\\\"\\([0-9T:+-]+\\)\\\\\"',f['content']\\);dates.sort\\(\\);print\\('newest event:',dates[-1] if dates else 'NONE'\\);print\\('count:',len\\(dates\\)\\)\")",
       "Bash(python -c ' *)",
       "Bash(grep -iE '\\\\.\\(docx?|odt\\)$')",
-      "Read(//c/Users/Thomas/Downloads//**)"
+      "Read(//c/Users/Thomas/Downloads//**)",
+      "WebFetch(domain:www.youtube.com)",
+      "Bash(node \"C:/Users/Thomas/AppData/Local/Temp/claude/C--Users-Thomas-Documents-GitHub-insights/f26b4b63-97ce-4af2-8508-76727dfeacd2/scratchpad/move-drinks.cjs\")",
+      "Bash(node -e \"const s=require\\('fs'\\).readFileSync\\('src/cuisine/data.js','utf8'\\); console.log\\('CRLF count:', \\(s.match\\(/\\\\r\\\\n/g\\)||[]\\).length, '| bare LF:', \\(s.match\\(/\\(?<!\\\\r\\)\\\\n/g\\)||[]\\).length\\)\")",
+      "Bash(node \"C:/Users/Thomas/AppData/Local/Temp/claude/C--Users-Thomas-Documents-GitHub-insights/f26b4b63-97ce-4af2-8508-76727dfeacd2/scratchpad/verify.mjs\")",
+      "Bash(node \"C:/Users/Thomas/AppData/Local/Temp/claude/C--Users-Thomas-Documents-GitHub-insights/f26b4b63-97ce-4af2-8508-76727dfeacd2/scratchpad/split-detailviews.cjs\")",
+      "Bash(command -v chromium-cli)",
+      "Bash(command -v playwright)",
+      "Bash(npx playwright *)",
+      "Bash(timeout 40 bash -c 'until curl -sf http://localhost:5173/insights/ >/dev/null 2>&1; do sleep 1; done')",
+      "Bash(node \"C:/Users/Thomas/AppData/Local/Temp/claude/C--Users-Thomas-Documents-GitHub-insights/f26b4b63-97ce-4af2-8508-76727dfeacd2/scratchpad/shot.mjs\")",
+      "Bash(MSYS_NO_PATHCONV=1 curl -s -o /dev/null -w \"double-prefixed -> %{http_code}\\\\n\" \"http://localhost:5173/insights/insights/icon-192.png\")",
+      "Bash(MSYS_NO_PATHCONV=1 curl -s -o /dev/null -w \"single-prefixed -> %{http_code}\\\\n\" \"http://localhost:5173/insights/icon-192.png\")",
+      "Bash(node \"C:/Users/Thomas/AppData/Local/Temp/claude/C--Users-Thomas-Documents-GitHub-insights/f26b4b63-97ce-4af2-8508-76727dfeacd2/scratchpad/shot.mjs\" Musculation)",
+      "Bash(node \"C:/Users/Thomas/AppData/Local/Temp/claude/C--Users-Thomas-Documents-GitHub-insights/f26b4b63-97ce-4af2-8508-76727dfeacd2/scratchpad/shot.mjs\" Cuisine)",
+      "Bash(node \"C:/Users/Thomas/AppData/Local/Temp/claude/C--Users-Thomas-Documents-GitHub-insights/f26b4b63-97ce-4af2-8508-76727dfeacd2/scratchpad/shot.mjs\" Fromages)",
+      "Bash(node -e ' *)",
+      "Bash(node \"C:/Users/Thomas/AppData/Local/Temp/claude/C--Users-Thomas-Documents-GitHub-insights/f26b4b63-97ce-4af2-8508-76727dfeacd2/scratchpad/shot.mjs\" Boissons)",
+      "Bash(node \"C:/Users/Thomas/AppData/Local/Temp/claude/C--Users-Thomas-Documents-GitHub-insights/f26b4b63-97ce-4af2-8508-76727dfeacd2/scratchpad/perf.mjs\")",
+      "Bash(node \"C:/Users/Thomas/AppData/Local/Temp/claude/C--Users-Thomas-Documents-GitHub-insights/f26b4b63-97ce-4af2-8508-76727dfeacd2/scratchpad/shot.mjs\" Trading)",
+      "Bash(node \"C:/Users/Thomas/AppData/Local/Temp/claude/C--Users-Thomas-Documents-GitHub-insights/f26b4b63-97ce-4af2-8508-76727dfeacd2/scratchpad/jank.mjs\")",
+      "Bash(node \"C:/Users/Thomas/AppData/Local/Temp/claude/C--Users-Thomas-Documents-GitHub-insights/f26b4b63-97ce-4af2-8508-76727dfeacd2/scratchpad/jank2.mjs\")"
     ]
   }
 }

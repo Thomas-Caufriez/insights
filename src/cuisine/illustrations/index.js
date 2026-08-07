@@ -4,13 +4,7 @@ import BrothIllustration from './BrothIllustration'
 import ChickenBreakdownIllustration from './ChickenBreakdownIllustration'
 import RiceBowlIllustration from './RiceBowlIllustration'
 import FingerMeasureIllustration from './FingerMeasureIllustration'
-import LimoncelloIllustration from './LimoncelloIllustration'
-import MaiTaiIllustration from './MaiTaiIllustration'
-import PornStarIllustration from './PornStarIllustration'
-import PinkPantherIllustration from './PinkPantherIllustration'
-import KiwiIllustration from './KiwiIllustration'
-import PsychedelicFrogIllustration from './PsychedelicFrogIllustration'
-import CremeBruleeIllustration from './CremeBruleeIllustration'
+import CarbonaraIllustration from './CarbonaraIllustration'
 
 export const illustrations = {
   'chicken-mustard': ChickenMustardIllustration,
@@ -19,13 +13,7 @@ export const illustrations = {
   'chicken-breakdown': ChickenBreakdownIllustration,
   'rice-bowl': RiceBowlIllustration,
   'finger-measure': FingerMeasureIllustration,
-  'limoncello': LimoncelloIllustration,
-  'mai-tai': MaiTaiIllustration,
-  'porn-star': PornStarIllustration,
-  'pink-panther': PinkPantherIllustration,
-  'kiwi': KiwiIllustration,
-  'psychedelic-frog': PsychedelicFrogIllustration,
-  'creme-brulee': CremeBruleeIllustration,
+  'carbonara': CarbonaraIllustration,
 }
 
 export function getIllustration(key) {

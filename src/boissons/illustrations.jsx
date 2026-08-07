@@ -1,6 +1,3 @@
-// Re-use the cuisine cocktail illustrations — same style, same data keys
-import { getIllustration as getCuisineIll } from '../cuisine/illustrations'
-
 const T  = '#00d4b8'  // teal
 const O  = '#ff7043'  // coral/orange
 const G  = '#f4c542'  // gold
@@ -265,14 +262,19 @@ export function PalmIll() {
   )
 }
 
-const CUSTOM = {
+// Keys match the `illustration` field on each entry in data.js.
+const ILLUSTRATIONS = {
+  'mai-tai': MaiTaiIll,
+  'porn-star': PornStarIll,
+  'pink-panther': PinkPantherIll,
+  'creme-brulee': CremeBruleeIll,
+  'psychedelic-frog': PsychedelicFrogIll,
+  'limoncello': LimoncelloIll,
+  'kiwi': LiqueurKiwiIll,
   'tiki': TikiMaskIll,
   'palm': PalmIll,
 }
 
 export function getBoissonsIllustration(name) {
-  // Cocktail illustrations already live in the cuisine module — reuse them
-  const fromCuisine = getCuisineIll(name)
-  if (fromCuisine) return fromCuisine
-  return CUSTOM[name] || null
+  return ILLUSTRATIONS[name] || null
 }

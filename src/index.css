@@ -34,3 +34,38 @@
     border-radius: 2px;
   }
 }
+
+/* ── Home backdrop motion ──────────────────────────────────────────────
+   Shared primitives for the five module backdrops. Transform/opacity only,
+   so every one of these stays on the compositor. Each backdrop pauses its
+   own animations when it isn't the active world (animation-play-state),
+   so only one scene is ever actually running. */
+
+@keyframes hp-drift-x   { from { transform: translateX(0);            } to { transform: translateX(-480px);          } }
+/* Travels exactly one 48px tile, so the loop is seamless. These two run on
+   plain <div> layers rather than SVG <g>, which lets the compositor slide them
+   instead of the CPU repainting a full-viewport SVG every frame. */
+@keyframes hp-tile-y    { from { transform: translateY(0);            } to { transform: translateY(-48px);           } }
+@keyframes hp-sweep-x   { from { transform: translateX(-100%);        } to { transform: translateX(100%);            } }
+@keyframes hp-rise      {
+  0%   { transform: translateY(40px) scale(0.85); opacity: 0; }
+  18%  { opacity: 0.55; }
+  82%  { opacity: 0.45; }
+  100% { transform: translateY(-260px) scale(1.1); opacity: 0; }
+}
+@keyframes hp-pulse     { 0%, 100% { opacity: 0.32; transform: scale(1); } 50% { opacity: 0.72; transform: scale(1.06); } }
+@keyframes hp-breathe   { 0%, 100% { opacity: 0.5; } 50% { opacity: 1; } }
+@keyframes hp-sweep     { from { transform: translateX(-45%); } to { transform: translateX(145%); } }
+@keyframes hp-sway      { 0%, 100% { transform: rotate(-1.6deg); } 50% { transform: rotate(1.6deg); } }
+@keyframes hp-shimmer   { 0%, 100% { transform: translateX(0); opacity: 0.3; } 50% { transform: translateX(18px); opacity: 0.6; } }
+
+/* Accessibility floor: this is not a style preference. Anyone who has asked
+   their OS to reduce motion gets the composition, still, with no animation. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

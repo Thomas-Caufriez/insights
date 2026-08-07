@@ -41,7 +41,34 @@ export function RecipePageBody({ entry }) {
           Préparation
         </p>
         <Steps steps={entry.steps} />
+        {entry.video && <VideoEmbed src={entry.video} />}
       </section>
+    </div>
+  )
+}
+
+export function VideoEmbed({ src }) {
+  return (
+    <div style={{
+      marginTop: '1.5rem',
+      borderRadius: '10px',
+      overflow: 'hidden',
+      border: '1px solid rgba(139,94,60,0.15)',
+      // 16:9 box — the frame follows the column width instead of a fixed height,
+      // which otherwise goes portrait between 768px and ~950px and again past 1100px
+      // when the decorative panel takes its 260px.
+      position: 'relative',
+      paddingBottom: '56.25%',
+      height: 0,
+    }}>
+      <iframe
+        src={src}
+        title="Vidéo de référence"
+        frameBorder="0"
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+        allowFullScreen
+        style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', display: 'block' }}
+      />
     </div>
   )
 }

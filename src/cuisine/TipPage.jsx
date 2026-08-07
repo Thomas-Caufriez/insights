@@ -1,6 +1,6 @@
 import { getIllustration } from './illustrations'
 import LeftColumn from './LeftColumn'
-import { Note } from './RecipePage'
+import { Note, VideoEmbed } from './RecipePage'
 import { useIsMobile } from '../hooks/useIsMobile'
 
 export function TipPageHeader({ entry }) {
@@ -48,20 +48,7 @@ export function TipPageBody({ entry }) {
             <StepsWithIllustrations steps={entry.steps} />
           </>
         )}
-        {entry.video && (
-          <div style={{ marginTop: '1.5rem', borderRadius: '10px', overflow: 'hidden', border: '1px solid rgba(139,94,60,0.15)' }}>
-            <iframe
-              src={entry.video}
-              title="Vidéo de référence"
-              width="100%"
-              height="315"
-              frameBorder="0"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              allowFullScreen
-              style={{ display: 'block' }}
-            />
-          </div>
-        )}
+        {entry.video && <VideoEmbed src={entry.video} />}
       </section>
     </div>
   )
