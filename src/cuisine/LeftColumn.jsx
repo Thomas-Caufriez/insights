@@ -66,7 +66,7 @@ export default function LeftColumn({ ingredients, note }) {
             const isRow = item.base != null
             const label = typeof item === 'string' ? item : item.label
             const qty = isRow
-              ? [item.base * people, item.unit].filter(Boolean).join(' ')
+              ? [formatQty(item.base * people), item.unit].filter(Boolean).join(' ')
               : (typeof item === 'object' ? item.qty : null)
 
             return (
@@ -92,6 +92,14 @@ export default function LeftColumn({ ingredients, note }) {
       )}
     </section>
   )
+}
+
+// A `base` that doesn't divide cleanly by the number of people the source recipe
+// was written for (125 g of coconut for 6) would otherwise print 20.833333333333332.
+// Round to one decimal, and use the French comma — the notes are written that way too.
+function formatQty(n) {
+  const rounded = Math.round(n * 10) / 10
+  return Number.isInteger(rounded) ? String(rounded) : String(rounded).replace('.', ',')
 }
 
 function ToggleBtn({ active, onClick, children }) {

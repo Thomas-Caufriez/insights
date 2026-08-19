@@ -53,7 +53,10 @@
       "Bash(node \"C:/Users/Thomas/AppData/Local/Temp/claude/C--Users-Thomas-Documents-GitHub-insights/f26b4b63-97ce-4af2-8508-76727dfeacd2/scratchpad/perf.mjs\")",
       "Bash(node \"C:/Users/Thomas/AppData/Local/Temp/claude/C--Users-Thomas-Documents-GitHub-insights/f26b4b63-97ce-4af2-8508-76727dfeacd2/scratchpad/shot.mjs\" Trading)",
       "Bash(node \"C:/Users/Thomas/AppData/Local/Temp/claude/C--Users-Thomas-Documents-GitHub-insights/f26b4b63-97ce-4af2-8508-76727dfeacd2/scratchpad/jank.mjs\")",
-      "Bash(node \"C:/Users/Thomas/AppData/Local/Temp/claude/C--Users-Thomas-Documents-GitHub-insights/f26b4b63-97ce-4af2-8508-76727dfeacd2/scratchpad/jank2.mjs\")"
+      "Bash(node \"C:/Users/Thomas/AppData/Local/Temp/claude/C--Users-Thomas-Documents-GitHub-insights/f26b4b63-97ce-4af2-8508-76727dfeacd2/scratchpad/jank2.mjs\")",
+      "Bash(node --input-type=module -e ' *)",
+      "Bash(node *)",
+      "Artifact"
     ]
   }
 }

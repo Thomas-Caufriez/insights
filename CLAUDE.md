@@ -31,6 +31,8 @@ npm run preview   # Serve the production build locally
 No tests, no linter. Push to `main` triggers `.github/workflows/deploy.yml` → GitHub Pages.
 Editing `tailwind.config.js` requires restarting the dev server.
 
+Commit, push, and starting a Claude Code session each POST to a Discord webhook — the first two via `.githooks/`, the third via a `SessionStart` hook in `.claude/settings.json`. Harmless, but it means someone sees the notification.
+
 ## Architecture
 
 **Insights** is a French-language personal knowledge-hub PWA: five independent domain modules sharing one shell. React 18 + Vite + Tailwind, deployed to GitHub Pages under base path `/insights/`.
@@ -59,16 +61,23 @@ This has been violated twice (module detail views accumulating in `App.jsx` unti
 | Module | Dir | Landing | Files beyond `data.js` + `DetailView.jsx` + `Backdrop.jsx` | Accent |
 |---|---|---|---|---|
 | Cuisine | `src/cuisine/` | Grid + Sidebar | `Grid`, `Sidebar`, `RecipePage`, `TipPage`, `LeftColumn`, `illustrations/` | Gold `#f5c872` |
-| Boissons | `src/boissons/` | Grid + Sidebar | `Grid`, `Sidebar`, `Page`, `Dashboard`, `illustrations.jsx` | Teal `#00d4b8` |
+| Boissons | `src/boissons/` | Grid + Sidebar | `Grid`, `Sidebar`, `Page`, `illustrations.jsx` (+ orphaned `Dashboard`) | Teal `#00d4b8` |
 | Fromages | `src/fromages/` | `Dashboard` | `Grid`, `Page`, `Dashboard` | Dark gold `#d4a44c` |
 | Trading | `src/trading/` | `Dashboard` | `Grid`, `Page`, `Dashboard`, `illustrations.jsx` | Neon cyan `#00d4aa` |
 | Musculation | `src/musculation/` | Grid + Sidebar | `Grid`, `Sidebar`, `ExercisePage` | Grey-blue `#c0c8d4` |
 
 Only `data.js`, `DetailView.jsx` and `Backdrop.jsx` are universal. Cuisine splits its detail page by entry `type` (`RecipePage` vs `TipPage`); the others have one `Page.jsx`. Inside a module folder, components are named plainly — `DetailView`, `DecorativePanel` — with no module prefix.
 
+Two things the file listing won't tell you:
+
+- **`boissons/Dashboard.jsx` is dead code** — 265 lines, imported by nothing. Boissons lands on Grid + Sidebar. Don't wire it up on the assumption it was meant to be the landing; ask first.
+- **`trading/Dashboard.jsx` is 1350 lines**, ~15% of `src/`. It is the live-data dashboard *and* its own chart/table/calendar rendering. Everything else in the repo sits between 70 and 400 lines.
+
 ### Data
 
-Each `data.js` exports an entries array, a categories array, and a `get*FilteredEntries(filterId)` helper, under module-prefixed names since `App.jsx` imports them into one scope.
+Each `data.js` exports an entries array, a categories array, and a `get*FilteredEntries(filterId)` helper, under module-prefixed names since `App.jsx` imports them into one scope — **except cuisine**, the oldest module, which exports the unprefixed `entries` / `categories` / `getFilteredEntries` and gets aliased at the import site in `App.jsx`. A new module should prefix.
+
+Trading's helper takes a second argument, `getTradingFilteredEntries(filterId, subcategoryId)`, since its categories carry a `subcategories` array; the other four take `filterId` alone.
 
 **Entry shapes are per-module.** Only `id` and `title` are universal. Cuisine/Boissons use `type` + `category` + `ingredients`/`steps`/`variants`; Trading uses `categoryId` + `market` + `stats` + `sections`.
 
