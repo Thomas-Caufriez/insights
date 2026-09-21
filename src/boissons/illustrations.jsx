@@ -241,6 +241,44 @@ export function TikiMaskIll() {
   )
 }
 
+export function MentheIll() {
+  const G1 = '#4caf50'
+  const G2 = '#2e7d32'
+  return (
+    <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" width="100%" height="100%">
+      {/* Jar body */}
+      <rect x="28" y="34" width="44" height="50" rx="6" fill={G1} opacity="0.15" />
+      <rect x="28" y="34" width="44" height="50" rx="6" fill="none" stroke={G1} strokeWidth="1.6" />
+      {/* Liquid fill */}
+      <path d="M29 50 L71 50 L71 78 Q71 83 65 83 L35 83 Q29 83 29 78 Z" fill={G1} opacity="0.25" />
+      {/* Lid */}
+      <rect x="25" y="26" width="50" height="10" rx="3" fill={G1} opacity="0.2" />
+      <rect x="25" y="26" width="50" height="10" rx="3" fill="none" stroke={G1} strokeWidth="1.4" />
+      <rect x="29" y="28" width="42" height="6" rx="2" fill="none" stroke={G1} strokeWidth="0.7" opacity="0.4" />
+      {/* Rubber seal */}
+      <ellipse cx="50" cy="34" rx="22" ry="2" fill={G1} opacity="0.3" />
+      {/* Clips */}
+      <path d="M24 32 L26 38" stroke={G1} strokeWidth="1.5" strokeLinecap="round" opacity="0.6" />
+      <path d="M76 32 L74 38" stroke={G1} strokeWidth="1.5" strokeLinecap="round" opacity="0.6" />
+      {/* Mint leaf 1 */}
+      <path d="M36 58 Q41 50 48 55 Q43 63 36 58 Z" fill={G2} opacity="0.5" />
+      <line x1="36" y1="58" x2="48" y2="55" stroke={G2} strokeWidth="0.6" opacity="0.4" />
+      {/* Mint leaf 2 */}
+      <path d="M52 63 Q59 55 65 59 Q60 67 52 63 Z" fill={G2} opacity="0.45" />
+      <line x1="52" y1="63" x2="65" y2="59" stroke={G2} strokeWidth="0.6" opacity="0.4" />
+      {/* Mint leaf 3 */}
+      <path d="M42 72 Q47 65 53 69 Q49 76 42 72 Z" fill={G2} opacity="0.4" />
+      <line x1="42" y1="72" x2="53" y2="69" stroke={G2} strokeWidth="0.5" opacity="0.35" />
+      {/* Bubbles */}
+      <circle cx="36" cy="74" r="1.5" fill={W} opacity="0.2" />
+      <circle cx="60" cy="68" r="1.2" fill={W} opacity="0.18" />
+      <circle cx="48" cy="77" r="1" fill={W} opacity="0.15" />
+      {/* Base */}
+      <rect x="26" y="84" width="48" height="5" rx="2.5" fill={G1} opacity="0.35" />
+    </svg>
+  )
+}
+
 export function PalmIll() {
   return (
     <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" width="100%" height="100%">
@@ -273,6 +311,7 @@ const ILLUSTRATIONS = {
   'kiwi': LiqueurKiwiIll,
   'tiki': TikiMaskIll,
   'palm': PalmIll,
+  'menthe': MentheIll,
 }
 
 export function getBoissonsIllustration(name) {

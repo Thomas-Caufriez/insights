@@ -8,6 +8,7 @@ import CarbonaraIllustration from './CarbonaraIllustration'
 import CoconutRockIllustration from './CoconutRockIllustration'
 import GarlicButterIllustration from './GarlicButterIllustration'
 import LemonCakeIllustration from './LemonCakeIllustration'
+import ChocolateFondantFinal from './ChocolateFondantFinal'
 
 export const illustrations = {
   'chicken-mustard': ChickenMustardIllustration,
@@ -20,6 +21,7 @@ export const illustrations = {
   'coconut-rock': CoconutRockIllustration,
   'garlic-butter': GarlicButterIllustration,
   'lemon-cake': LemonCakeIllustration,
+  'chocolate-fondant': ChocolateFondantFinal,
 }
 
 export function getIllustration(key) {
