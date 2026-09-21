@@ -1,7 +1,7 @@
 import { FromagesPageHeader, FromagesPageBody } from './Page'
 import { useIsMobile } from '../hooks/useIsMobile'
 
-export default function DetailView({ entry, onBack, isMobile }) {
+export default function DetailView({ entry, onBack, onHome, isMobile }) {
   const hPad = isMobile ? '1rem' : '3.5rem'
   const hidePanel = useIsMobile(1100)
 
@@ -29,6 +29,21 @@ export default function DetailView({ entry, onBack, isMobile }) {
           onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(212,164,76,0.07)' }}
         >
           ← Retour
+        </button>
+        <div style={{ flex: 1 }} />
+        <button
+          onClick={onHome}
+          style={{
+            fontFamily: '"DM Sans", sans-serif', fontSize: '0.72rem', fontWeight: 500,
+            letterSpacing: '0.01em',
+            color: 'rgba(212,164,76,0.4)', background: 'none',
+            border: 'none', cursor: 'pointer', padding: '0.3rem 0',
+            transition: 'color 0.12s',
+          }}
+          onMouseEnter={(e) => { e.currentTarget.style.color = '#d4a44c' }}
+          onMouseLeave={(e) => { e.currentTarget.style.color = 'rgba(212,164,76,0.4)' }}
+        >
+          ⌂ Accueil
         </button>
       </div>
 

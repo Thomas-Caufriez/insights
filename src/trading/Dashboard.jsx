@@ -77,9 +77,9 @@ export default function TradingDashboard({ onSelectCategory, onSelectEntry, onHo
       <div className={`${isMobile ? 'px-5' : 'px-8'} py-[0.85rem] border-b border-tr-border flex-shrink-0 flex items-center justify-between`}>
         <button
           onClick={onHome}
-          className="font-sans text-[0.7rem] font-medium tracking-[0.02em] text-tr-dim hover:text-tr-text bg-transparent border-none cursor-pointer p-0 transition-colors"
+          className="inline-flex items-center gap-1.5 font-sans text-[0.72rem] font-medium tracking-[0.03em] text-[rgba(196,79,255,0.5)] hover:text-[#c44fff] bg-[rgba(196,79,255,0.06)] hover:bg-[rgba(196,79,255,0.12)] border border-[rgba(196,79,255,0.12)] hover:border-[rgba(196,79,255,0.28)] rounded-md cursor-pointer px-[0.65rem] py-[0.28rem] transition-all"
         >
-          ← Insights
+          ⌂ Accueil
         </button>
         <span className="font-sans font-extrabold text-[0.9rem] tracking-[0.08em] text-tr-text [text-shadow:0_0_18px_#c44fff88]">
           Trading

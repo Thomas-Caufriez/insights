@@ -36,15 +36,19 @@ export default function FromagesDashboard({ onSelectCategory, onHome, isMobile }
         <button
           onClick={onHome}
           style={{
-            fontFamily: UI, fontSize: '0.7rem', fontWeight: 400,
-            letterSpacing: '0.02em', color: TEXT_DIM,
-            background: 'none', border: 'none', cursor: 'pointer', padding: 0,
-            transition: 'color 0.12s',
+            display: 'inline-flex', alignItems: 'center', gap: '0.35rem',
+            fontFamily: UI, fontSize: '0.72rem', fontWeight: 500,
+            letterSpacing: '0.03em', color: 'rgba(212,164,76,0.5)',
+            background: 'rgba(212,164,76,0.06)',
+            border: '1px solid rgba(212,164,76,0.12)',
+            borderRadius: '6px',
+            cursor: 'pointer', padding: '0.28rem 0.65rem',
+            transition: 'color 0.12s, background 0.12s, border-color 0.12s',
           }}
-          onMouseEnter={(e) => (e.currentTarget.style.color = TEXT)}
-          onMouseLeave={(e) => (e.currentTarget.style.color = TEXT_DIM)}
+          onMouseEnter={(e) => { e.currentTarget.style.color = '#d4a44c'; e.currentTarget.style.background = 'rgba(212,164,76,0.12)'; e.currentTarget.style.borderColor = 'rgba(212,164,76,0.28)' }}
+          onMouseLeave={(e) => { e.currentTarget.style.color = 'rgba(212,164,76,0.5)'; e.currentTarget.style.background = 'rgba(212,164,76,0.06)'; e.currentTarget.style.borderColor = 'rgba(212,164,76,0.12)' }}
         >
-          ← Insights
+          ⌂ Accueil
         </button>
         <span style={{
           fontFamily: FONT, fontWeight: 700, fontStyle: 'italic',

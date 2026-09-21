@@ -1,5 +1,5 @@
 export const theme = {
-  id: 'cooking',
+  id: 'cuisine',
   label: 'Cuisine',
   description: 'Recettes, fiches techniques, carnets de saveurs.',
   accent: '#8b5e3c',

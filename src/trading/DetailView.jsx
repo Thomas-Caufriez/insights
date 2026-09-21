@@ -2,7 +2,7 @@ import { TradingPageHeader, TradingPageBody } from './Page'
 import { getTradingIllustration } from './illustrations'
 import { useIsMobile } from '../hooks/useIsMobile'
 
-export default function DetailView({ entry, onBack, isMobile }) {
+export default function DetailView({ entry, onBack, onHome, isMobile }) {
   const hidePanel = useIsMobile(1100)
 
   return (
@@ -15,6 +15,13 @@ export default function DetailView({ entry, onBack, isMobile }) {
           className="font-jakarta text-[0.72rem] font-semibold tracking-[0.01em] text-[#d1d8e8] bg-white/5 hover:bg-[rgba(0,212,170,0.1)] border border-white/[0.08] rounded-lg cursor-pointer px-[0.85rem] py-[0.3rem] transition-colors"
         >
           ← Retour
+        </button>
+        <div className="flex-1" />
+        <button
+          onClick={onHome}
+          className="font-jakarta text-[0.72rem] font-semibold tracking-[0.01em] text-[rgba(0,212,170,0.4)] hover:text-[#00d4aa] bg-transparent border-none cursor-pointer p-0 transition-colors"
+        >
+          ⌂ Accueil
         </button>
       </div>
 

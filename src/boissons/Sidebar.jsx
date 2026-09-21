@@ -77,16 +77,20 @@ export default function BoissonsSidebar({ filterId, onFilter, onHome, isMobile, 
           <button
             onClick={onHome}
             style={{
-              display: 'block',
-              fontFamily: UI, fontSize: '0.62rem', letterSpacing: '0.06em',
-              color: ACCENT_DIM, background: 'none', border: 'none',
-              cursor: 'pointer', padding: 0, marginBottom: '0.75rem',
-              transition: 'color 0.12s',
+              display: 'inline-flex', alignItems: 'center', gap: '0.35rem',
+              fontFamily: UI, fontSize: '0.72rem', fontWeight: 500,
+              letterSpacing: '0.03em',
+              color: 'rgba(93,212,202,0.5)',
+              background: 'rgba(93,212,202,0.06)',
+              border: '1px solid rgba(93,212,202,0.12)',
+              borderRadius: '6px',
+              cursor: 'pointer', padding: '0.28rem 0.65rem', marginBottom: '0.85rem',
+              transition: 'color 0.12s, background 0.12s, border-color 0.12s',
             }}
-            onMouseEnter={(e) => (e.currentTarget.style.color = ACCENT)}
-            onMouseLeave={(e) => (e.currentTarget.style.color = ACCENT_DIM)}
+            onMouseEnter={(e) => { e.currentTarget.style.color = ACCENT; e.currentTarget.style.background = 'rgba(93,212,202,0.12)'; e.currentTarget.style.borderColor = 'rgba(93,212,202,0.28)' }}
+            onMouseLeave={(e) => { e.currentTarget.style.color = 'rgba(93,212,202,0.5)'; e.currentTarget.style.background = 'rgba(93,212,202,0.06)'; e.currentTarget.style.borderColor = 'rgba(93,212,202,0.12)' }}
           >
-            ← Insights
+            ⌂ Accueil
           </button>
           {/* Tiki palm decoration */}
           <svg width="24" height="24" viewBox="0 0 24 24" style={{ marginBottom: '0.4rem', opacity: 0.55 }}>

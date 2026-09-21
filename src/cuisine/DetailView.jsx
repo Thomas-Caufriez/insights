@@ -4,7 +4,7 @@ import { RecipePageHeader, RecipePageBody } from './RecipePage'
 import { TipPageHeader, TipPageBody } from './TipPage'
 import { useIsMobile } from '../hooks/useIsMobile'
 
-export default function DetailView({ entry, onBack, isMobile, onMenuOpen }) {
+export default function DetailView({ entry, onBack, onHome, isMobile, onMenuOpen }) {
   const [activeVariant, setActiveVariant] = useState(0)
   const hidePanel = useIsMobile(1100)
 
@@ -60,6 +60,20 @@ export default function DetailView({ entry, onBack, isMobile, onMenuOpen }) {
           onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(139,94,60,0.08)'; e.currentTarget.style.borderColor = 'rgba(139,94,60,0.22)' }}
         >
           ← Retour
+        </button>
+        <div style={{ flex: 1 }} />
+        <button
+          onClick={onHome}
+          style={{
+            fontFamily: '"DM Sans", sans-serif', fontSize: '0.75rem', fontWeight: 500,
+            color: 'rgba(139,94,60,0.5)', background: 'none',
+            border: 'none', cursor: 'pointer', padding: '0.3rem 0',
+            letterSpacing: '0.02em', transition: 'color 0.12s',
+          }}
+          onMouseEnter={(e) => { e.currentTarget.style.color = '#8b5e3c' }}
+          onMouseLeave={(e) => { e.currentTarget.style.color = 'rgba(139,94,60,0.5)' }}
+        >
+          ⌂ Accueil
         </button>
       </div>
 

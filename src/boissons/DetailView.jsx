@@ -3,7 +3,7 @@ import { BoissonsPageHeader, BoissonsPageBody } from './Page'
 import { getBoissonsIllustration } from './illustrations'
 import { useIsMobile } from '../hooks/useIsMobile'
 
-export default function DetailView({ entry, onBack, isMobile, onMenuOpen }) {
+export default function DetailView({ entry, onBack, onHome, isMobile, onMenuOpen }) {
   const [activeVariant, setActiveVariant] = useState(0)
   const [panelScrollY, setPanelScrollY] = useState(0)
   const hidePanel = useIsMobile(1100)
@@ -51,6 +51,20 @@ export default function DetailView({ entry, onBack, isMobile, onMenuOpen }) {
           onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(46,189,177,0.08)'; e.currentTarget.style.borderColor = 'rgba(46,189,177,0.22)' }}
         >
           ← Retour
+        </button>
+        <div style={{ flex: 1 }} />
+        <button
+          onClick={onHome}
+          style={{
+            fontFamily: '"DM Sans", sans-serif', fontSize: '0.75rem', fontWeight: 500,
+            color: 'rgba(46,189,177,0.45)', background: 'none',
+            border: 'none', cursor: 'pointer', padding: '0.3rem 0',
+            letterSpacing: '0.02em', transition: 'color 0.12s',
+          }}
+          onMouseEnter={(e) => { e.currentTarget.style.color = '#2ebdb1' }}
+          onMouseLeave={(e) => { e.currentTarget.style.color = 'rgba(46,189,177,0.45)' }}
+        >
+          ⌂ Accueil
         </button>
       </div>
 

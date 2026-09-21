@@ -30,22 +30,23 @@ export default function Sidebar({ filterId, onFilter, onHome, isMobile, onClose 
         <button
           onClick={onHome}
           style={{
-            display: 'block',
+            display: 'inline-flex', alignItems: 'center', gap: '0.35rem',
             fontFamily: '"DM Sans", sans-serif',
-            fontSize: '0.62rem',
-            letterSpacing: '0.06em',
-            color: 'rgba(245,200,114,0.35)',
-            background: 'none',
-            border: 'none',
+            fontSize: '0.72rem', fontWeight: 500,
+            letterSpacing: '0.03em',
+            color: 'rgba(245,200,114,0.5)',
+            background: 'rgba(245,200,114,0.06)',
+            border: '1px solid rgba(245,200,114,0.12)',
+            borderRadius: '6px',
             cursor: 'pointer',
-            padding: 0,
-            marginBottom: '0.75rem',
-            transition: 'color 0.12s',
+            padding: '0.28rem 0.65rem',
+            marginBottom: '0.85rem',
+            transition: 'color 0.12s, background 0.12s, border-color 0.12s',
           }}
-          onMouseEnter={(e) => (e.currentTarget.style.color = 'rgba(245,200,114,0.7)')}
-          onMouseLeave={(e) => (e.currentTarget.style.color = 'rgba(245,200,114,0.35)')}
+          onMouseEnter={(e) => { e.currentTarget.style.color = '#f5c872'; e.currentTarget.style.background = 'rgba(245,200,114,0.12)'; e.currentTarget.style.borderColor = 'rgba(245,200,114,0.28)' }}
+          onMouseLeave={(e) => { e.currentTarget.style.color = 'rgba(245,200,114,0.5)'; e.currentTarget.style.background = 'rgba(245,200,114,0.06)'; e.currentTarget.style.borderColor = 'rgba(245,200,114,0.12)' }}
         >
-          ← Insights
+          ⌂ Accueil
         </button>
         <p style={{ fontFamily: '"Playfair Display", serif', fontStyle: 'italic', color: '#f5c872', fontSize: '1.1rem', lineHeight: 1.3 }}>
           Carnet de<br />Recettes

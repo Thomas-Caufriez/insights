@@ -2,20 +2,15 @@ import { useState, useRef, useEffect, useCallback } from 'react'
 import { useIsMobile } from './hooks/useIsMobile'
 
 import CuisineBackdrop, { theme as cuisine } from './cuisine/Backdrop'
-import MuscuBackdrop, { theme as musculation } from './musculation/Backdrop'
 import TradingBackdrop, { theme as trading } from './trading/Backdrop'
 import FromagesBackdrop, { theme as fromages } from './fromages/Backdrop'
 import BoissonsBackdrop, { theme as boissons } from './boissons/Backdrop'
 
-// Order is the display order: the three food-and-drink worlds group first,
-// then trading. Musculation sits last while its world is still being designed
-// — it's the one module with no prior art to draw from.
 const WORLDS = [
   { ...cuisine, Backdrop: CuisineBackdrop },
   { ...boissons, Backdrop: BoissonsBackdrop },
   { ...fromages, Backdrop: FromagesBackdrop },
   { ...trading, Backdrop: TradingBackdrop },
-  { ...musculation, Backdrop: MuscuBackdrop, wip: true },
 ]
 
 const UI = '"DM Sans", sans-serif'

@@ -58,7 +58,8 @@
       "Bash(node *)",
       "Artifact",
       "Bash(grep -E \":\\\\s*$\")",
-      "Bash(sed \"s/'//g\")"
+      "Bash(sed \"s/'//g\")",
+      "Bash(npm install:*)"
     ]
   }
 }
