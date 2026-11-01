@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useIsMobile } from '../hooks/useIsMobile'
 
-export default function LeftColumn({ ingredients, note }) {
+export default function LeftColumn({ ingredients, note, servings }) {
   const isMobile = useIsMobile()
   const hasIngredients = ingredients?.length > 0
   const hasNote = !!note
@@ -9,7 +9,10 @@ export default function LeftColumn({ ingredients, note }) {
 
   const defaultView = hasIngredients ? 'ingredients' : 'note'
   const [view, setView] = useState(defaultView)
-  const [people, setPeople] = useState(1)
+  // Le compteur s'ouvre sur le nombre de parts pour lequel la recette a été
+  // écrite, histoire que la fiche affiche d'abord les quantités d'origine.
+  // Sans `servings` sur l'entrée, on retombe sur 1 pers. comme avant.
+  const [people, setPeople] = useState(servings ?? 1)
 
   useEffect(() => {
     setView(hasIngredients ? 'ingredients' : 'note')

@@ -28,7 +28,7 @@ export function TipPageBody({ entry }) {
   const isMobile = useIsMobile()
   return (
     <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: isMobile ? '1.5rem' : '2.5rem', fontFamily: 'Lora, Georgia, serif' }}>
-      <LeftColumn ingredients={entry.ingredients} note={entry.notes} />
+      <LeftColumn ingredients={entry.ingredients} note={entry.notes} servings={entry.servings} />
       {!isMobile && <div style={{ width: '1px', background: 'rgba(139,94,60,0.15)', flexShrink: 0 }} />}
       {isMobile && <div style={{ height: '1px', background: 'rgba(139,94,60,0.15)' }} />}
       <section style={{ flex: 1, minWidth: 0 }}>
