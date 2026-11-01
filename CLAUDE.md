@@ -83,7 +83,18 @@ Trading's helper takes a second argument, `getTradingFilteredEntries(filterId, s
 
 **Cuisine is food, Boissons is drinks, Fromages is cheese — they share nothing.** Each owns its entries and illustrations. Don't reintroduce a drinks category in cuisine or a cheese category outside `fromages/`.
 
-Cuisine/Boissons ingredients are either `{ label }` or scalable `{ label, base, unit }`. **`base` is the per-*person* amount, not the recipe total** — `LeftColumn` starts its counter at 1 pers. and renders `base * people`, so a recipe written "for 4" must be divided down. Scalable entries should omit `servings`, which would render a redundant badge.
+**Every quantity is scalable — this is the rule, not a per-recipe choice.** Cuisine/Boissons ingredients take one of two shapes: `{ label }` for anything unmeasured ("Sel, poivre", "Panko, sans compter"), or `{ label, base, unit }` for anything carrying a number. **`base` is the per-*person* amount, not the recipe total** — a recipe written "for 4" divides every quantity by 4, so 165 g of chocolate becomes `base: 41.25`.
+
+Carry `servings` whenever the recipe was written as a batch — it is the counter opening value, so the card lands on the quantities as authored. A recipe written per person in the first place (`carbonara`, `cuire-riz`) can omit it and open at 1. Both counters (`LeftColumn`, `BoissonsPageBody`) open on `servings ?? 1`, so the card first shows the original quantities untouched; and `RecipePageHeader` / `BoissonsPageHeader` hide the static servings badge whenever the ingredients are calculable, because a frozen "4 personnes" chip beside a live counter contradicts itself on the first click.
+
+Two habits that keep a scaled recipe honest:
+
+- **Pluralise labels with `(s)`** — `'œuf(s) entier(s)'`, `'carotte(s)'` — since the number in front of them changes.
+- **Never freeze an absolute inside a label or a step.** `'d'huile végétale (6 cl)'` and "Ajoute les 2 c. à soupe de farine" both go stale the moment the counter moves; write `'d'huile végétale'` and "Ajoute la farine". Times and temperatures don't scale, so those stay.
+
+Both modules round through a `formatQty` helper — one decimal, French comma — so a `base` needn't divide cleanly, and `4.4 * 3` prints `13,2` rather than `13.200000000000001`.
+
+The one deliberate exception is `{ label, qty }`: fixed quantities, no counter, for a batch preparation that isn't portioned per person. Only `beurre-ail-confit` uses it (a condiment you roll into a log and slice on demand). Don't reach for it for an ordinary recipe. `bouillon-poulet` is a second kind of exception — it has `servings` but no numbers at all, deliberately, since you build a stock from whatever you have.
 
 Illustrations are keyed by a string on the entry (`illustration: 'mai-tai'`) and resolved through a per-module registry. A new SVG must be registered there or it silently renders nothing.
 

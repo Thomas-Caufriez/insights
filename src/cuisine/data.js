@@ -125,6 +125,7 @@ export const entries = [
     titleItalic: 'coco',
     time: '17 min',
     difficulty: 'Facile',
+    servings: 6,
     tags: ['3 ingrédients'],
     illustration: 'coconut-rock',
     // Recette d'origine pour 6 : 125 g de coco, 120 g de sucre, 3 blancs.
@@ -188,21 +189,24 @@ export const entries = [
     servings: 4,
     tags: ['Lava cake', '200 °C'],
     illustration: 'chocolate-fondant',
+    // `base` = quantité par personne. Recette d'origine pour 4, donc tout est
+    // divisé par 4 ; le compteur s'ouvrant sur `servings`, la fiche affiche
+    // d'emblée les 165 g / 115 g / 50 g d'origine.
     ingredients: [
-      { label: 'de chocolat noir', qty: '165 g' },
-      { label: 'de beurre doux', qty: '115 g' },
-      { label: 'de sucre', qty: '50 g' },
-      { label: '1 pincée de sel' },
-      { label: 'œufs entiers', qty: '2' },
-      { label: 'jaunes d\'œuf', qty: '2' },
-      { label: 'de farine (pour la pâte)', qty: '2 c. à soupe' },
-      { label: 'de farine (pour les ramequins)', qty: '1 c. à café' },
+      { label: 'de chocolat noir', base: 41.25, unit: 'g' },
+      { label: 'de beurre doux', base: 28.75, unit: 'g' },
+      { label: 'de sucre', base: 12.5, unit: 'g' },
+      { label: 'Une pincée de sel' },
+      { label: 'œuf(s) entier(s)', base: 0.5 },
+      { label: 'jaune(s) d\'œuf', base: 0.5 },
+      { label: 'de farine, pour la pâte', base: 0.5, unit: 'c. à soupe' },
+      { label: 'de farine, pour les ramequins', base: 0.25, unit: 'c. à café' },
     ],
     steps: [
       { text: 'Casse le chocolat en petits morceaux et mets-le dans un bol avec le beurre. Fais fondre au micro-ondes par intervalles de 30 secondes, en mélangeant entre chaque, jusqu\'à obtenir une pâte lisse.' },
       { text: 'Dans un autre bol, fouette les œufs entiers, les jaunes, le sucre et le sel jusqu\'à obtenir un mélange homogène.' },
       { text: 'Incorpore le chocolat fondu légèrement refroidi dans le mélange œufs-sucre — pas trop chaud pour ne pas cuire les œufs. Mélange jusqu\'à homogénéité.' },
-      { text: 'Ajoute les 2 c. à soupe de farine et incorpore délicatement.' },
+      { text: 'Ajoute la farine et incorpore délicatement.' },
       { text: 'Beurre généreusement les ramequins et farines-les légèrement pour éviter que ça colle.' },
       { text: 'Répartis la pâte dans les ramequins et enfourne à 200 °C pendant 10 à 12 minutes — les bords doivent être pris, le centre encore légèrement tremblant.' },
       { text: 'Démoule immédiatement et sers sans attendre.' },
@@ -221,17 +225,19 @@ export const entries = [
     servings: 8,
     tags: ['Citron entier', 'Au mixeur'],
     illustration: 'lemon-cake',
-    // Quantités fixes : un cake se fait au moule entier, pas à la part.
+    // `base` = quantité par personne. Recette d'origine pour 8, donc tout est
+    // divisé par 8. Les équivalences figées des libellés (« 6 cl », « environ
+    // 1 citron pressé ») ont sauté : elles devenaient fausses au premier clic.
     ingredients: [
-      { label: 'citron Meyer', qty: '1' },
-      { label: 'de sucre', qty: '150 g' },
-      { label: 'œufs', qty: '3' },
-      { label: 'd\'huile végétale (6 cl)', qty: '4 c. à soupe' },
-      { label: 'de lait (6 cl)', qty: '4 c. à soupe' },
-      { label: 'de farine', qty: '220 g' },
-      { label: 'de levure chimique', qty: '10 g' },
-      { label: 'de sucre glace, pour le glaçage', qty: '100 g' },
-      { label: 'de jus de citron, pour le glaçage (environ 1 citron pressé)', qty: '2 c. à soupe' },
+      { label: 'citron(s) Meyer', base: 0.125 },
+      { label: 'de sucre', base: 18.75, unit: 'g' },
+      { label: 'œuf(s)', base: 0.375 },
+      { label: 'd\'huile végétale', base: 0.5, unit: 'c. à soupe' },
+      { label: 'de lait', base: 0.5, unit: 'c. à soupe' },
+      { label: 'de farine', base: 27.5, unit: 'g' },
+      { label: 'de levure chimique', base: 1.25, unit: 'g' },
+      { label: 'de sucre glace, pour le glaçage', base: 12.5, unit: 'g' },
+      { label: 'de jus de citron, pour le glaçage', base: 0.25, unit: 'c. à soupe' },
     ],
     steps: [
       { text: 'Fais bouillir le citron Meyer entier pendant 5 minutes.' },

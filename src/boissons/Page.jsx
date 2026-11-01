@@ -13,6 +13,10 @@ const UI       = '"DM Sans", sans-serif'
 const MONO     = '"Space Grotesk", sans-serif'
 
 export function BoissonsPageHeader({ entry }) {
+  // Une puce figée « 1 pers. » à côté du compteur du corps de page se contredit
+  // au premier clic : quand les ingrédients sont calculables, c'est le compteur
+  // qui fait foi et `servings` ne sert plus qu'à l'initialiser.
+  const isCalculable = entry.ingredients?.some((i) => i.base != null)
   const Ill = getBoissonsIllustration(entry.illustration)
 
   return (
@@ -87,7 +91,7 @@ export function BoissonsPageHeader({ entry }) {
           <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap', marginTop: '0.75rem' }}>
             {entry.time      && <HeroChip label={entry.time} />}
             {entry.difficulty && <HeroChip label={entry.difficulty} />}
-            {entry.servings != null && <HeroChip label={`${entry.servings} pers.`} color="#e87a5a" />}
+            {entry.servings != null && !isCalculable && <HeroChip label={`${entry.servings} pers.`} color="#e87a5a" />}
             {entry.tags?.map((t) => <HeroChip key={t} label={t} color="#d4950a" />)}
           </div>
         </div>
@@ -131,7 +135,7 @@ export function BoissonsPageBody({ entry }) {
         <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
           {entry.ingredients?.map((ing, i) => {
             const qty = ing.base != null
-              ? `${ing.base * people}${ing.unit ? ` ${ing.unit}` : ''}`
+              ? `${formatQty(ing.base * people)}${ing.unit ? ` ${ing.unit}` : ''}`
               : null
             return (
               <li key={i} style={{ display: 'flex', alignItems: 'baseline', gap: '0.5rem' }}>
@@ -192,6 +196,13 @@ export function BoissonsPageBody({ entry }) {
       </section>
     </div>
   )
+}
+
+// 4,4 cl de rhum × 3 pers. donne 13.200000000000001 en binaire. Même règle que
+// `formatQty` côté cuisine : une décimale, et la virgule française.
+function formatQty(n) {
+  const rounded = Math.round(n * 10) / 10
+  return Number.isInteger(rounded) ? String(rounded) : String(rounded).replace('.', ',')
 }
 
 function ServingBtn({ onClick, children }) {
