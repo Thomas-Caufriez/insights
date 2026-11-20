@@ -46,6 +46,7 @@ export function RecipePageBody({ entry }) {
         </p>
         <Steps steps={entry.steps} />
         {entry.video && <VideoEmbed src={entry.video} />}
+        {entry.source && <SourceLink href={entry.source} />}
       </section>
     </div>
   )
@@ -82,6 +83,43 @@ export function VideoEmbed({ src }) {
         allowFullScreen
         style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', display: 'block' }}
       />
+    </div>
+  )
+}
+
+// Lien vers la recette d'origine, pour les fiches reprises d'ailleurs. Le nom
+// du site est déduit de l'URL plutôt que saisi à la main : un libellé écrit en
+// dur finit toujours par ne plus correspondre au lien. Rendu uniquement si
+// l'entrée porte un `source` — les autres fiches ne bougent pas.
+export function SourceLink({ href }) {
+  let host
+  try {
+    host = new URL(href).hostname.replace(/^www\./, '')
+  } catch {
+    host = 'le site d\'origine'
+  }
+
+  return (
+    <div style={{ marginTop: '1.5rem' }}>
+      <a
+        href={href}
+        target="_blank"
+        rel="noopener noreferrer"
+        style={{
+          display: 'inline-flex', alignItems: 'center', gap: '0.35rem',
+          fontFamily: '"DM Sans", sans-serif', fontSize: '0.72rem', fontWeight: 500,
+          color: '#8b5e3c', textDecoration: 'none',
+          background: 'rgba(139,94,60,0.08)',
+          border: '1px solid rgba(139,94,60,0.22)',
+          borderRadius: '999px', padding: '0.3rem 0.85rem',
+          letterSpacing: '0.02em',
+          transition: 'background 0.12s, border-color 0.12s',
+        }}
+        onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(139,94,60,0.15)'; e.currentTarget.style.borderColor = 'rgba(139,94,60,0.4)' }}
+        onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(139,94,60,0.08)'; e.currentTarget.style.borderColor = 'rgba(139,94,60,0.22)' }}
+      >
+        ↗ Recette d'origine sur {host}
+      </a>
     </div>
   )
 }

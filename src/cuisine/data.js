@@ -313,15 +313,116 @@ export const entries = [
     ],
     notes: 'Les cubes de Golden Curry et le MSG salent déjà la sauce pour toi : la main légère sur le sel avant de mixer, tu rectifieras à la fin. Le repos sur grille n\'est pas décoratif — posé sur du papier absorbant ou noyé sous la sauce, le panko devient une éponge en trente secondes, alors la sauce en dessous ou à côté, jamais par-dessus. Et rince bien le riz à sushi, c\'est une bombe à amidon.',
   },
+  {
+    id: 'soupe-butternut-carottes',
+    type: 'recipe',
+    category: 'Plats',
+    title: 'Soupe de butternut et carottes',
+    titleBase: 'Soupe',
+    titleItalic: 'de butternut et carottes',
+    time: '50 min',
+    difficulty: 'Facile',
+    servings: 4,
+    tags: ['Four 200 °C', 'Tout au four'],
+    illustration: 'butternut-soup',
+    video: 'https://www.instagram.com/p/C_8KufwJYoq/embed',
+    // `base` est la quantité par *personne*. La source ne disait pas pour combien
+    // de parts : un butternut entier, 3 tomates et 2 carottes nourrissent 4, donc
+    // `servings: 4` et chaque base vaut le quart du total. Le compteur de
+    // LeftColumn s'ouvrant sur `servings`, la fiche affiche ces quantités-là tant
+    // qu'on n'y touche pas.
+    ingredients: [
+      { label: 'butternut', base: 0.25 },
+      { label: 'tomate(s)', base: 0.75 },
+      { label: 'carotte(s)', base: 0.5 },
+      { label: 'gros oignon(s)', base: 0.25 },
+      { label: 'tête(s) d\'ail', base: 0.25 },
+      { label: 'de gingembre frais râpé', base: 0.5, unit: 'c. à café' },
+      { label: 'Bouillon de légumes, de quoi détendre au mixage' },
+      { label: 'Sel, poivre' },
+    ],
+    steps: [
+      { text: 'Préchauffe ton four à 200 °C.' },
+      { text: 'Coupe le butternut en deux dans la longueur et retire les graines à la cuillère.' },
+      { text: 'Coupe les tomates en deux.' },
+      { text: 'Épluche les carottes et détaille-les en rondelles d\'un centimètre.' },
+      { text: 'Épluche les oignons et coupe-les grossièrement en quartiers.' },
+      { text: 'Scalpe la tête d\'ail — tu lui enlèves le chapeau, tu lui laisses la peau. C\'est elle qui protège les gousses pendant qu\'elles confisent.' },
+      { text: 'Râpe le gingembre. Pour la peau, une cuillère à café gratte mieux qu\'un économe et t\'évite d\'y laisser un ongle.' },
+      { text: 'Balance tout sur une plaque recouverte de papier cuisson, faces coupées vers le haut, et fais pleuvoir le sel et le poivre.' },
+      { text: 'Enfourne 40 min, jusqu\'à ce qu\'un couteau traverse le butternut jusqu\'au cœur sans forcer. Il doit être mou — s\'il résiste encore, laisse-le méditer cinq minutes de plus.' },
+      { text: 'Verse tout dans un récipient haut et presse la tête d\'ail pour en faire sortir les gousses confites. La peau à la poubelle, les gousses dans la soupe (et pas l\'inverse, sinon j\'te frappe).' },
+      { text: 'Mixe le tout en ajoutant le bouillon petit à petit, jusqu\'à ce que ce soit parfaitement lisse.' },
+      { text: 'Sers dans un bol et garnis à ta sauce : croûtons, filet de lait de coco, flocons de chili, huile d\'olive. Bon appétit chef.' },
+    ],
+    notes: 'C\'est une base, pas un dogme : tout ce qui traîne dans le frigo peut monter sur la plaque — panais, patate douce, poivron, un fond de courge. Le four fait le boulot, le mixeur efface les preuves. Vas-y doucement sur le bouillon, par petites louches : une soupe trop liquide ne se rattrape pas, alors qu\'une soupe trop épaisse se détend en deux secondes.',
+  },
+  {
+    id: 'ragu-bolognese',
+    type: 'recipe',
+    category: 'Bases & sauces',
+    // `title` n'est affiché nulle part dans ce module : ni la carte ni l'en-tête
+    // ne le lisent, seul le champ de recherche de Grid le parcourt. D'où la
+    // traduction entre parenthèses — on tape « bolognaise » et la fiche sort.
+    title: 'Ragù alla bolognese (sauce bolognaise)',
+    titleBase: 'Ragù',
+    titleItalic: 'alla bolognese',
+    time: '2h30 – 3h30',
+    difficulty: 'Facile',
+    servings: 8,
+    tags: ['Soffritto', 'Au lait'],
+    illustration: 'ragu-bolognese',
+    source: 'https://www.750g.com/sauce-bolognaise-l-authentique-ragu-alla-bolognese-italien-r203424.htm',
+    // `base` est la quantité par *personne*. La recette est écrite pour 8, donc
+    // chaque base vaut un huitième du total, et le compteur de LeftColumn
+    // s'ouvrant sur `servings`, la fiche affiche d'emblée les 500 g / 300 g /
+    // 700 g d'origine. Les « verres » de la source sont passés en centilitres
+    // (un verre ≈ 20 cl) : un demi-verre divisé par 8 tombait à 0,1 verre.
+    // Ordre de la liste : l'ordre dans lequel ça tombe dans la cocotte.
+    ingredients: [
+      { label: 'de pancetta', base: 12.5, unit: 'g' },
+      { label: 'Huile d\'olive, un filet' },
+      { label: 'oignon(s)', base: 0.125 },
+      { label: 'carotte(s)', base: 0.125 },
+      { label: 'branche(s) de céleri', base: 0.125 },
+      { label: 'de chair à saucisse', base: 37.5, unit: 'g' },
+      { label: 'de bœuf haché', base: 62.5, unit: 'g' },
+      { label: 'de vin rouge (ou blanc sec)', base: 1.25, unit: 'cl' },
+      { label: 'de lait', base: 5, unit: 'cl' },
+      { label: 'de coulis de tomate', base: 87.5, unit: 'g' },
+      { label: 'de concentré de tomates', base: 0.25, unit: 'c. à soupe' },
+      { label: 'feuille(s) de laurier', base: 0.25 },
+      { label: 'La croûte d\'un parmigiano reggiano — le bonus' },
+      { label: 'Sel, poivre' },
+    ],
+    steps: [
+      { text: 'Pèle et cisèle finement l\'oignon.' },
+      { text: 'Pèle la carotte et taille-la en petits dés.' },
+      { text: 'Lave le céleri et taille-le en petits dés, même calibre que la carotte.' },
+      { text: 'Coupe la pancetta en lardons et fais-les rissoler dans une cocotte avec un filet d\'huile d\'olive.' },
+      { text: 'Ajoute l\'oignon, la carotte et le céleri, et fais-les revenir quelques secondes avec la pancetta.' },
+      { text: 'Baisse le feu au minimum et poursuis la cuisson jusqu\'à ce que les légumes blondissent. C\'est le soffritto, et c\'est lui qui porte tout le reste — ne le brusque pas.' },
+      { text: 'Ajoute la chair à saucisse finement émiettée et fais-la saisir.' },
+      { text: 'Ajoute la viande hachée et fais-la saisir à son tour, en mélangeant de temps en temps.' },
+      { text: 'Déglace au vin et laisse cuire jusqu\'à ce qu\'il se soit complètement évaporé.' },
+      { text: 'Verse le lait et laisse-le se faire absorber entièrement. Oui, du lait — c\'est lui qui attendrit la viande, et non, ça ne va pas tourner.' },
+      { text: 'Ajoute le coulis, le concentré, le laurier, le sel et le poivre (et la croûte de parmesan si tu l\'as).' },
+      { text: 'Couvre la cocotte et laisse mijoter 2 à 3 heures à feu très doux, en touillant de temps en temps.' },
+      { text: 'Si de l\'huile stagne à la surface, retire-la à la louche.' },
+      { text: 'Rectifie le sel et le poivre, puis repêche les feuilles de laurier et la croûte de parmesan — personne n\'a envie de tomber dessus en mangeant.' },
+      { text: 'Sers-en avec tes meilleures pâtes et ton meilleur fromage râpé. A tavola chef.' },
+    ],
+    notes: 'Le lait avant les tomates, jamais l\'inverse : une fois que l\'acidité de la tomate est dans la cocotte, le lait tranche et tu récoltes des grumeaux. Et « très doux » n\'est pas une suggestion — à gros bouillons tu obtiens de la viande sèche dans de la sauce tomate, pas un ragù. Il se garde 4 à 5 jours au frigo et se congèle très bien, donc autant en faire trop.',
+  },
 ]
 
 export const categories = [
   { id: 'entrees',             label: 'Entrées',                entryIds: [] },
-  { id: 'plats',               label: 'Plats',                  entryIds: ['carbonara', 'katsu-curry'] },
+  { id: 'plats',               label: 'Plats',                  entryIds: ['carbonara', 'katsu-curry', 'soupe-butternut-carottes'] },
   { id: 'accompagnements',     label: 'Accompagnements',        entryIds: [] },
   { id: 'desserts',            label: 'Desserts',               entryIds: ['rochers-coco', 'cake-citron', 'fondant-chocolat'] },
   { id: 'petit-dejeuner',      label: 'Petit-déjeuner & brunch',entryIds: [] },
-  { id: 'bases-sauces',        label: 'Bases & sauces',         entryIds: ['bouillon-poulet', 'beurre-ail-confit'] },
+  { id: 'bases-sauces',        label: 'Bases & sauces',         entryIds: ['bouillon-poulet', 'beurre-ail-confit', 'ragu-bolognese'] },
   { id: 'techniques',          label: 'Techniques',             entryIds: ['desosser-poulet', 'cuire-riz'] },
 ]
 

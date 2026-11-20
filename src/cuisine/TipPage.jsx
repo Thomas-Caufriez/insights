@@ -1,6 +1,6 @@
 import { getIllustration } from './illustrations'
 import LeftColumn from './LeftColumn'
-import { Note, VideoEmbed } from './RecipePage'
+import { Note, VideoEmbed, SourceLink } from './RecipePage'
 import { useIsMobile } from '../hooks/useIsMobile'
 
 export function TipPageHeader({ entry }) {
@@ -49,6 +49,7 @@ export function TipPageBody({ entry }) {
           </>
         )}
         {entry.video && <VideoEmbed src={entry.video} />}
+        {entry.source && <SourceLink href={entry.source} />}
       </section>
     </div>
   )

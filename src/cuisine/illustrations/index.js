@@ -10,6 +10,8 @@ import GarlicButterIllustration from './GarlicButterIllustration'
 import LemonCakeIllustration from './LemonCakeIllustration'
 import ChocolateFondantFinal from './ChocolateFondantFinal'
 import KatsuCurryIllustration from './KatsuCurryIllustration'
+import ButternutSoupIllustration from './ButternutSoupIllustration'
+import RaguBologneseIllustration from './RaguBologneseIllustration'
 
 export const illustrations = {
   'chicken-mustard': ChickenMustardIllustration,
@@ -24,6 +26,8 @@ export const illustrations = {
   'lemon-cake': LemonCakeIllustration,
   'chocolate-fondant': ChocolateFondantFinal,
   'katsu-curry': KatsuCurryIllustration,
+  'butternut-soup': ButternutSoupIllustration,
+  'ragu-bolognese': RaguBologneseIllustration,
 }
 
 export function getIllustration(key) {
